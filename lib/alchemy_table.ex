@@ -1,0 +1,2 @@
+defmodule AlchemyTable do
+end
