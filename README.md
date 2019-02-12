@@ -6,10 +6,10 @@ Currently only schema generation functionality exists, but full ODM support is p
 
 Built using the [Elixir Bigtable client library](https://github.com/bzzt/bigtable).
 
-[![Hex.pm](https://img.shields.io/hexpm/v/bigtable.svg)](https://hex.pm/packages/alchemy_table)
-[![Build Status](https://travis-ci.org/bzzt/bigtable.svg?branch=master)](https://travis-ci.org/bzzt/alchemy_table)
-[![codecov](https://codecov.io/gh/bzzt/bigtable/branch/master/graph/badge.svg)](https://codecov.io/gh/bzzt/alchemy_table)
-[![codebeat badge](https://codebeat.co/badges/6203650d-db88-4c48-9173-948cc3404145)](https://codebeat.co/projects/github-com-bzzt-alchemy_table-master)
+[![Hex.pm](https://img.shields.io/hexpm/v/alchemy_table.svg)](https://hex.pm/packages/alchemy_table)
+[![Build Status](https://travis-ci.org/bzzt/alchemy_table.svg?branch=master)](https://travis-ci.org/bzzt/alchemy_table)
+[![codecov](https://codecov.io/gh/bzzt/alchemy_table/branch/master/graph/badge.svg)](https://codecov.io/gh/bzzt/alchemy_table)
+[![codebeat badge](https://codebeat.co/badges/3682f688-6bc9-401a-9a8c-ef7e038e0230)](https://codebeat.co/projects/github-com-bzzt-alchemy_table-master)
 [![Built with Spacemacs](https://cdn.rawgit.com/syl20bnr/spacemacs/442d025779da2f62fc86c2082703697714db6514/assets/spacemacs-badge.svg)](http://spacemacs.org)
 
 ## Warning!
