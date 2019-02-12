@@ -1,0 +1,8 @@
+version: "3"
+services:
+  alchemy-test:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    volumes:
+      - ./cover:/app/cover

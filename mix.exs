@@ -1,13 +1,51 @@
 defmodule AlchemyTable.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+
   def project do
     [
       app: :alchemy_table,
-      version: "0.1.0",
+      version: @version,
+      package: package(),
       elixir: "~> 1.7",
+      name: "Alchemy Table",
+      homepage_url: "https://github.com/bzzt/alchemy_table",
+      source_url: "https://github.com/bzzt/alchemy_table",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      docs: docs(),
+      aliases: aliases(),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        "coveralls.json": :test,
+        "coveralls.html": :test,
+        coverage: :test
+      ]
+    ]
+  end
+
+  defp package() do
+    [
+      description: "Opinionated schema management for Bigtable and BigQuery.",
+      maintainers: ["Jason Scott"],
+      licenses: ["MIT"],
+      links: %{github: "https://github.com/bzzt/alchemy_table"}
+    ]
+  end
+
+  defp docs do
+    [
+      source_ref: "v#{@version}",
+      formatters: ["html", "epub"]
+    ]
+  end
+
+  defp aliases do
+    [
+      coverage: [
+        "coveralls.json"
+      ]
     ]
   end
 
@@ -21,7 +59,11 @@ defmodule AlchemyTable.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:bigtable, path: "../bigtable"}
+      {:bigtable, "~> 0.5.0"},
+      {:credo, "~> 1.0.0", only: [:dev, :test, :ci], runtime: false},
+      {:excoveralls, "~> 0.10", only: [:dev, :test, :ci]},
+      {:ex_doc, "~> 0.19", only: :dev, runtime: false},
+      {:mix_test_watch, "~> 0.8", only: :dev, runtime: false}
     ]
   end
 end
