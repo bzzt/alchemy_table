@@ -1,5 +1,6 @@
 defmodule AlchemyTable.Schema do
-  alias AlchemTable.Operations.{Delete, Get, Update}
+  alias AlchemyTable.{Operations, Reads}
+  alias Operations.{Delete, Get, Update}
 
   @moduledoc """
   Allows the creation of typed Bigtable schemas.
@@ -148,7 +149,7 @@ defmodule AlchemyTable.Schema do
       end
 
       def parse_result(result) do
-        Typed.Reads.parse_result(result, __MODULE__.type())
+        Reads.parse_result(result, __MODULE__.type())
       end
 
       def type do
