@@ -1,13 +1,12 @@
-defmodule Bigtable.Schema do
-  alias Bigtable.Typed
-  alias Typed.{Delete, Get, Update}
+defmodule AlchemyTable.Schema do
+  alias AlchemTable.Operations.{Delete, Get, Update}
 
   @moduledoc """
   Allows the creation of typed Bigtable schemas.
 
   ## Examples
       iex> defmodule SchemaExample do
-      ...>  use Bigtable.Schema
+      ...>  use AlchemyTable.Schema
       ...>  @update_patterns ["family_a.column_a"]
       ...>  row :entity do
       ...>    family :family_a do
@@ -206,7 +205,7 @@ end
 defmodule BT.Schema.PositionTest do
   @moduledoc false
 
-  use Bigtable.Schema
+  use AlchemyTable.Schema
 
   type do
     column(:bearing, :integer)
@@ -219,7 +218,7 @@ end
 defmodule BT.Schema.VehicleTest do
   @moduledoc false
 
-  use Bigtable.Schema
+  use AlchemyTable.Schema
 
   @update_patterns ["vehicle.id"]
 

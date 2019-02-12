@@ -1,6 +1,6 @@
 defmodule UtilsTest do
   @moduledoc false
-  alias Bigtable.Typed.Utils
+  alias AlchemyTable.Utils
 
   use ExUnit.Case
 

@@ -26,9 +26,6 @@ defmodule AlchemyTable.Mutations do
           binary() | nil
         ) :: Google.Bigtable.V2.MutateRowsRequest.Entry.t()
   defp apply_mutations(type_spec, map, entry, family_name, parent_key \\ nil) do
-    IO.inspect(type_spec)
-    IO.inspect(map)
-
     Enum.reduce(map, entry, fn {k, v}, accum ->
       column_qualifier = column_qualifier(parent_key, k)
 

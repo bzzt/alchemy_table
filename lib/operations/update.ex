@@ -1,7 +1,7 @@
-defmodule Bigtable.Typed.Update do
+defmodule AlchemyTable.Operations.Update do
   @moduledoc false
-  alias Bigtable.{MutateRows, Typed}
-  alias Typed.{Utils, Validation}
+  alias AlchemyTable.{Mutations, Utils, Validation}
+  alias Bigtable.MutateRows
 
   def update(type_spec, maps, row_prefix, update_patterns) do
     mutations = mutations_from_maps(type_spec, maps, row_prefix, update_patterns)
@@ -33,7 +33,7 @@ defmodule Bigtable.Typed.Update do
 
       properties
       |> Utils.build_update_key(row_prefix, map)
-      |> Typed.Mutations.create_mutations(type_spec, map)
+      |> Mutations.create_mutations(type_spec, map)
     end)
   end
 end

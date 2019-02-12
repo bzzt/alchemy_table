@@ -1,6 +1,6 @@
 defmodule ValidationTest do
   @moduledoc false
-  alias Bigtable.Typed.Validation
+  alias AlchemyTable.Validation
 
   use ExUnit.Case
 

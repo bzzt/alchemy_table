@@ -1,4 +1,4 @@
-defmodule Bigtable.Typed.Delete do
+defmodule AlchemyTable.Operations.Delete do
   @moduledoc false
   alias Bigtable.{MutateRows, Mutations}
 

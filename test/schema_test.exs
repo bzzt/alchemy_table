@@ -1,10 +1,10 @@
 defmodule SchemaTest do
   use ExUnit.Case
 
-  doctest Bigtable.Schema
+  doctest AlchemyTable.Schema
 
   defmodule OneColumnType do
-    use Bigtable.Schema
+    use AlchemyTable.Schema
 
     type do
       column(:a, :integer)
@@ -12,7 +12,7 @@ defmodule SchemaTest do
   end
 
   defmodule TwoColumnType do
-    use Bigtable.Schema
+    use AlchemyTable.Schema
 
     type do
       column(:a, :integer)
@@ -21,7 +21,7 @@ defmodule SchemaTest do
   end
 
   defmodule TestSchema do
-    use Bigtable.Schema
+    use AlchemyTable.Schema
 
     @update_patterns ["family_a.a"]
 
@@ -34,7 +34,7 @@ defmodule SchemaTest do
   end
 
   defmodule TestSchemaWithType do
-    use Bigtable.Schema
+    use AlchemyTable.Schema
 
     @update_patterns ["family_a.a"]
 

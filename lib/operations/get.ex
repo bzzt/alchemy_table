@@ -1,4 +1,4 @@
-defmodule Bigtable.Typed.Get do
+defmodule AlchemyTable.Operations.Get do
   @moduledoc false
 
   alias Bigtable.{ReadRows, RowFilter, RowSet}

@@ -1,4 +1,4 @@
-defmodule Bigtable.Typed.Validation do
+defmodule AlchemyTable.Validation do
   @moduledoc false
   @spec validate_map!(map(), map()) :: :ok
   def validate_map!(type_spec, map) do
