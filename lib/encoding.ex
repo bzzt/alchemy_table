@@ -18,8 +18,8 @@ defmodule AlchemyTable.Encoding do
   defp encode_string(:map, v), do: Poison.encode!(v)
   defp encode_string(_, v), do: to_string(v)
 
-  defp encode_bytes(:boolean, true), do: encode_bytes(:integer, 1)
-  defp encode_bytes(:boolean, false), do: encode_bytes(:integer, 0)
+  defp encode_bytes(:boolean, true), do: <<1>>
+  defp encode_bytes(:boolean, false), do: <<0>>
   defp encode_bytes(:integer, v), do: <<v::integer-signed-64>>
   defp encode_bytes(:float, v), do: <<v::signed-float-64>>
   defp encode_bytes(:list, v), do: Poison.encode!(v)

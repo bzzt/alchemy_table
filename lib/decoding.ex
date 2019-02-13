@@ -21,8 +21,8 @@ defmodule AlchemyTable.Decoding do
 
   defp decode_bytes(:boolean, v) do
     case v do
-      <<0, 0, 0, 0, 0, 0, 0, 1>> -> true
-      <<0, 0, 0, 0, 0, 0, 0, 0>> -> false
+      <<1>> -> true
+      <<0>> -> false
     end
   end
 
