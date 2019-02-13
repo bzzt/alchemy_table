@@ -26,6 +26,6 @@ The package can be installed as:
 
 ```elixir
 def deps do
- [{:alchemy_table, "~> 0.1.0"}]
+ [{:alchemy_table, "~> 0.1.2"}]
 end
 ```
