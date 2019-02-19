@@ -160,22 +160,45 @@ defmodule AlchemyTable.Schema do
 
   If the column value is defined as either `:map` or `:list`, the value will be JSON encoded during mutations and decoded during reads.
   """
-  defmacro column(key, value) do
-    c = {key, get_value_type(value)} |> Macro.escape()
+  defmacro column(key, {:__aliases__, _, _} = value) do
+    type =
+      Macro.expand(value, __CALLER__)
+      |> apply(:type, [])
+      |> Macro.escape()
+
+    c = {key, type}
 
     quote do
       var!(columns) = [unquote(c) | var!(columns)]
     end
   end
 
-  defp get_value_type(value) when is_atom(value), do: value
+  defmacro column(key, value) do
+    c = {key, value}
 
-  defp get_value_type({:__aliases__, _, modules}) do
-    Module.concat([Elixir | modules]).type()
+    quote do
+      var!(columns) = [unquote(c) | var!(columns)]
+    end
+  end
+
+  # defp get_value_type(value) when is_atom(value), do: value
+
+  # defp get_value_type({:__aliases__, _, modules}) do
+  # Module.concat([Elixir | modules]).type()
+  # end
+end
+
+defmodule BT.Schema.VehicleStateTest do
+  use AlchemyTable.Schema
+
+  table :vehicle_state do
+    family :vehicle do
+      column(:state, :string)
+    end
   end
 end
 
-defmodule BT.Schema.PositionTest do
+defmodule BT.Schema.VehiclePositionTest do
   use AlchemyTable.Schema
 
   type do
@@ -186,15 +209,8 @@ defmodule BT.Schema.PositionTest do
   end
 end
 
-defmodule BT.Schema.VehicleStateTest do
-  table :vehicle_state do
-    family :vehicle do
-      column(:state, :string)
-    end
-  end
-end
-
 defmodule BT.Schema.VehicleTest do
+  alias BT.Schema.{VehiclePositionTest, VehicleStateTest}
   use AlchemyTable.Schema
 
   table :vehicle do
@@ -206,9 +222,10 @@ defmodule BT.Schema.VehicleTest do
       column(:fleet, :string)
       column(:id, :string)
       column(:numberPlate, :string)
-      column(:position, BT.Schema.PositionTest)
-      column(:previousPosition, BT.Schema.PositionTest)
+      column(:position, VehiclePositionTest)
+      column(:previousPosition, VehiclePositionTest)
       column(:ride, :string)
+      column(:state, VehicleStateTest)
     end
   end
 end
