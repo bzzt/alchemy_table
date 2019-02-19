@@ -106,6 +106,7 @@ defmodule AlchemyTable.Schema do
 
   defmacro row(name, do: block) do
     quote do
+      @behaviour unquote(__MODULE__)
       @prefix "#{String.capitalize(to_string(unquote(name)))}"
       unquote(block)
       defstruct @families
