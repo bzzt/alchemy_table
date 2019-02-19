@@ -176,8 +176,6 @@ defmodule AlchemyTable.Schema do
 end
 
 defmodule BT.Schema.PositionTest do
-  @moduledoc false
-
   use AlchemyTable.Schema
 
   type do
@@ -188,12 +186,16 @@ defmodule BT.Schema.PositionTest do
   end
 end
 
+defmodule BT.Schema.VehicleStateTest do
+  table :vehicle_state do
+    family :vehicle do
+      column(:state, :string)
+    end
+  end
+end
+
 defmodule BT.Schema.VehicleTest do
-  @moduledoc false
-
   use AlchemyTable.Schema
-
-  @update_patterns ["vehicle.id"]
 
   table :vehicle do
     family :vehicle do

@@ -23,3 +23,4 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 alchemy_table-*.tar
 .DS_Store
+schema-defs

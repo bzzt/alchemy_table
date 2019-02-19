@@ -1,14 +1,21 @@
 defmodule Mix.Tasks.BigQuery.Schemas do
   use Mix.Task
-
+  @schema_dir Path.join([File.cwd!(), "/schema-defs"])
   def run(_) do
+    File.mkdir(@schema_dir)
+
     Path.wildcard(Path.join([Mix.Project.build_path(), "**/ebin/**/*.beam"]))
-    |> Stream.map(&get_module_attributes/1)
-    |> Stream.filter(&implements_schema?/1)
+    |> Enum.map(&get_module_attributes/1)
+    |> Enum.filter(&implements_schema?/1)
     |> Enum.map(&elem(&1, 0))
     |> Enum.map(&get_metadata/1)
-    |> Enum.map(&translate_families/1)
-    |> IO.inspect()
+    |> Enum.map(&build_spec/1)
+    |> Enum.map(&write_def/1)
+  end
+
+  defp write_def({name, schema}) do
+    "#{@schema_dir}/#{name}.json"
+    |> File.write!(schema)
   end
 
   defp get_module_attributes(path) do
@@ -22,26 +29,30 @@ defmodule Mix.Tasks.BigQuery.Schemas do
 
   defp get_metadata(module), do: apply(module, :metadata, [])
 
-  defp translate_families(metadata) do
+  defp build_spec(metadata) do
     base_spec = base_def(metadata)
     type_spec = Map.from_struct(metadata.type)
 
-    column_defs =
-      Enum.map(type_spec, fn {family, columns} ->
-        %{
-          familyId: Recase.CamelCase.convert(to_string(family)),
-          onlyReadLatest: true,
-          encoding: "TEXT",
-          columns: translate_columns(columns)
-        }
-      end)
+    column_defs = translate_column_families(type_spec)
 
-    bigtable_options = %{
-      columnFamilies: column_defs,
-      readRowkeyAsString: true
-    }
+    json_spec =
+      Map.merge(base_spec, %{
+        bigtableOptions: %{columnFamilies: column_defs, readRowkeyAsString: true}
+      })
+      |> Poison.encode!(pretty: true)
 
-    Map.put(base_spec, :bigtableOptions, bigtable_options)
+    {metadata.name, json_spec}
+  end
+
+  defp translate_column_families(type_spec) do
+    Enum.map(type_spec, fn {family, columns} ->
+      %{
+        familyId: Recase.CamelCase.convert(to_string(family)),
+        onlyReadLatest: true,
+        encoding: "TEXT",
+        columns: translate_columns(columns)
+      }
+    end)
   end
 
   defp translate_columns(columns, parent_key \\ []) do
@@ -58,7 +69,7 @@ defmodule Mix.Tasks.BigQuery.Schemas do
     qualifier = [to_string(qualifier) | parent_key] |> Enum.reverse()
 
     column_def = %{
-      qualifier_string: qualifier |> Enum.join("."),
+      qualifierString: qualifier |> Enum.join("."),
       type: translate_type(type)
     }
 
