@@ -39,6 +39,10 @@ defmodule AlchemyTable.Schema do
       Module.register_attribute(__MODULE__, :rows, accumulate: true)
       Module.register_attribute(__MODULE__, :families, accumulate: true)
       Module.register_attribute(__MODULE__, :columns, accumulate: true)
+
+      def instance do
+        Bigtable.Utils.configured_instance_name()
+      end
     end
   end
 
@@ -104,53 +108,20 @@ defmodule AlchemyTable.Schema do
   ```
   """
 
-  defmacro row(name, do: block) do
+  defmacro table(name, do: block) do
     quote do
       @behaviour unquote(__MODULE__)
+      @name unquote(to_string(name))
       @prefix "#{String.capitalize(to_string(unquote(name)))}"
       unquote(block)
       defstruct @families
 
-      def get_all do
-        rows = Get.get_all(@prefix)
-
-        rows
-        |> parse_result()
-      end
-
-      def get_by_id(ids) when is_list(ids) do
-        rows = Get.get_by_id(ids, @prefix)
-
-        rows
-        |> parse_result()
-      end
-
-      def get_by_id(id) when is_binary(id) do
-        get_by_id([id])
-      end
-
-      def update(maps) when is_list(maps) do
-        Update.update(__MODULE__.type(), maps, @prefix, @update_patterns)
-      end
-
-      def update(map) when is_map(map) do
-        update([map])
-      end
-
-      def delete(ids) when is_list(ids) do
-        Delete.delete_by_id(ids, @prefix)
-      end
-
-      def delete(id) when is_binary(id) do
-        delete([id])
-      end
-
-      def delete_all do
-        Delete.delete_all()
-      end
-
-      def parse_result(result) do
-        Reads.parse_result(result, __MODULE__.type())
+      def metadata do
+        %{
+          name: @name,
+          instance: instance(),
+          type: type()
+        }
       end
 
       def type do
@@ -224,7 +195,7 @@ defmodule BT.Schema.VehicleTest do
 
   @update_patterns ["vehicle.id"]
 
-  row :vehicle do
+  table :vehicle do
     family :vehicle do
       column(:battery, :integer)
       column(:checkedInAt, :string)

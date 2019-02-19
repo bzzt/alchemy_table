@@ -60,6 +60,7 @@ defmodule AlchemyTable.MixProject do
   defp deps do
     [
       {:bigtable, "~> 0.6.0"},
+      {:recase, "~> 0.4"},
       {:credo, "~> 1.0.0", only: [:dev, :test, :ci], runtime: false},
       {:excoveralls, "~> 0.10", only: [:dev, :test, :ci]},
       {:ex_doc, "~> 0.19", only: :dev, runtime: false},
