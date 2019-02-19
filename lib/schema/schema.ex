@@ -1,36 +1,6 @@
 defmodule AlchemyTable.Schema do
-  alias AlchemyTable.{Operations, Reads}
-  alias Operations.{Delete, Get, Update}
-
   @moduledoc """
   Allows the creation of typed Bigtable schemas.
-
-  ## Examples
-      iex> defmodule SchemaExample do
-      ...>  use AlchemyTable.Schema
-      ...>  @update_patterns ["family_a.column_a"]
-      ...>  row :entity do
-      ...>    family :family_a do
-      ...>      column(:column_a, :integer)
-      ...>      column(:column_b, :boolean)
-      ...>    end
-      ...>    family :family_b do
-      ...>      column(:column_a, :map)
-      ...>      column(:column_b, :list)
-      ...>    end
-      ...>  end
-      ...> end
-      iex> SchemaExample.type() |> Map.from_struct()
-      %{
-        family_a: %{
-          column_a: :integer,
-          column_b: :boolean
-        },
-        family_b: %{
-          column_a: :map,
-          column_b: :list
-        }
-      }
   """
 
   defmacro __using__(_opt) do
@@ -48,29 +18,6 @@ defmodule AlchemyTable.Schema do
 
   @doc """
   Defines a type that can be used as the value for a `Bigtable.Schema.column/2` definition.
-
-  ## Examples
-  ```elixir
-
-  defmodule Type do
-    use Bigtable.Schema
-
-    type do
-      column(:a, :integer)
-      column(:b, :string)
-    end
-  end
-
-  defmodule Schema do
-    use Bigtable.Schema
-
-    row :entity do
-      family :family do
-        column(:column, Type)
-      end
-    end
-  end
-  ```
   """
   defmacro type(do: block) do
     quote do
@@ -87,32 +34,13 @@ defmodule AlchemyTable.Schema do
 
   @doc """
   Defines a schema to be used when reading and mutating Bigtable rows.
-
-  ## Examples
-  ```elixir
-
-  defmodule Schema do
-    use Bigtable.Schema
-
-    row :entity do
-      family :family_a do
-        column(:column_a, :string)
-      end
-
-      family :family_b do
-        column(:column_a, :integer)
-        column(:column_b, :boolean)
-      end
-    end
-  end
-  ```
   """
 
   defmacro table(name, do: block) do
     quote do
+      Module.register_attribute(__MODULE__, :promoted, accumlate: true)
       @behaviour unquote(__MODULE__)
       @name unquote(to_string(name))
-      @prefix "#{String.capitalize(to_string(unquote(name)))}"
       unquote(block)
       defstruct @families
 
@@ -139,6 +67,7 @@ defmodule AlchemyTable.Schema do
   """
   defmacro family(name, do: block) do
     quote do
+      var!(name) = unquote(name)
       var!(columns) = []
       unquote(block)
       @families {unquote(name), Map.new(var!(columns))}
@@ -160,7 +89,7 @@ defmodule AlchemyTable.Schema do
 
   If the column value is defined as either `:map` or `:list`, the value will be JSON encoded during mutations and decoded during reads.
   """
-  defmacro column(key, {:__aliases__, _, _} = value) do
+  defmacro column(key, {:__aliases__, _, _} = value, opts) do
     type =
       Macro.expand(value, __CALLER__)
       |> apply(:type, [])
@@ -173,7 +102,7 @@ defmodule AlchemyTable.Schema do
     end
   end
 
-  defmacro column(key, value) do
+  defmacro column(key, value, _opts) do
     c = {key, value}
 
     quote do
@@ -181,51 +110,22 @@ defmodule AlchemyTable.Schema do
     end
   end
 
-  # defp get_value_type(value) when is_atom(value), do: value
-
-  # defp get_value_type({:__aliases__, _, modules}) do
-  # Module.concat([Elixir | modules]).type()
-  # end
-end
-
-defmodule BT.Schema.VehicleStateTest do
-  use AlchemyTable.Schema
-
-  table :vehicle_state do
-    family :vehicle do
-      column(:state, :string)
+  defmacro column(key, value) do
+    quote do
+      column(unquote(key), unquote(value), [])
     end
   end
-end
 
-defmodule BT.Schema.VehiclePositionTest do
-  use AlchemyTable.Schema
+  defmacro promoted(key, value) do
+    base_type =
+      Macro.expand(value, __CALLER__)
+      |> apply(:type, [])
+      |> Map.from_struct()
+      |> Macro.escape()
 
-  type do
-    column(:bearing, :integer)
-    column(:latitude, :float)
-    column(:longitude, :float)
-    column(:timestamp, :string)
-  end
-end
-
-defmodule BT.Schema.VehicleTest do
-  alias BT.Schema.{VehiclePositionTest, VehicleStateTest}
-  use AlchemyTable.Schema
-
-  table :vehicle do
-    family :vehicle do
-      column(:battery, :integer)
-      column(:checkedInAt, :string)
-      column(:condition, :string)
-      column(:driver, :string)
-      column(:fleet, :string)
-      column(:id, :string)
-      column(:numberPlate, :string)
-      column(:position, VehiclePositionTest)
-      column(:previousPosition, VehiclePositionTest)
-      column(:ride, :string)
-      column(:state, VehicleStateTest)
+    quote do
+      type = unquote(base_type) |> get_in([var!(name), unquote(key)])
+      var!(columns) = [{unquote(key), type} | var!(columns)]
     end
   end
 end
