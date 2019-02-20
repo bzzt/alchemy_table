@@ -11,17 +11,27 @@ defmodule Mix.Tasks.BigQuery.Schemas do
     |> Enum.map(&get_metadata/1)
     |> Enum.map(&build_definition/1)
     |> Enum.map(&clone_definitions/1)
-    |> List.flatten()
-    |> Enum.each(&write_def/1)
+    |> Enum.each(&write_defs/1)
   end
 
-  defp write_def({metadata, def_header, def_body}) do
-    definition =
-      Map.merge(def_header, def_body)
-      |> Poison.encode!(pretty: true)
+  defp write_defs([{metadata, _, _} | _] = defs) when is_list(defs) do
+    dir = "#{@schema_dir}/#{metadata.name}"
+    File.mkdir(dir)
+    Enum.each(defs, &write_def(&1, dir))
+  end
 
-    "#{@schema_dir}/#{metadata.name}.json"
+  defp write_defs(d), do: write_def(d)
+
+  defp write_def({metadata, def_header, def_body}, dir \\ @schema_dir) do
+    definition = to_json(def_header, def_body)
+
+    "#{dir}/#{metadata.name}.json"
     |> File.write!(definition)
+  end
+
+  defp to_json(header, body) do
+    Map.merge(header, body)
+    |> Poison.encode!(pretty: true)
   end
 
   defp get_module_attributes(path) do
