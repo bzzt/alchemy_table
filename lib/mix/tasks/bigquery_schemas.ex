@@ -87,10 +87,12 @@ defmodule Mix.Tasks.BigQuery.Schemas do
   end
 
   defp base_def(%{instance: instance, name: name}) do
+    table_name = Recase.KebabCase.convert(name)
+
     %{
       sourceFormat: "BIGTABLE",
       sourceUris: [
-        "https://googleapis.com/bigtable/#{instance}/tables/#{name}"
+        "https://googleapis.com/bigtable/#{instance}/tables/#{table_name}"
       ],
       nullMarker: "",
       bigtableOptions: %{
