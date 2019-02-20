@@ -10,7 +10,7 @@ defmodule Mix.Tasks.BigQuery.Schemas do
     |> Enum.map(&elem(&1, 0))
     |> Enum.map(&get_metadata/1)
     |> Enum.map(&build_definition/1)
-    |> Enum.map(&clone_definition/1)
+    |> Enum.map(&clone_definitions/1)
     |> List.flatten()
     |> Enum.each(&write_def/1)
   end
@@ -49,20 +49,24 @@ defmodule Mix.Tasks.BigQuery.Schemas do
     {metadata, header, definition}
   end
 
-  defp clone_definition({metadata, _header, body} = definition) do
+  defp clone_definitions({metadata, _header, _body} = definition) do
     if metadata.cloned == nil do
       definition
     else
       cloned =
         metadata.cloned
-        |> Enum.map(fn to_clone ->
-          meta = %{metadata | name: to_clone}
-          header = def_header(meta)
-          {meta, header, body}
-        end)
+        |> Enum.map(&clone(&1, definition))
 
       [definition | cloned]
     end
+  end
+
+  def clone({to_clone, _opts}, definition), do: clone(to_clone, definition)
+
+  def clone(to_clone, {metadata, _, body}) do
+    meta = %{metadata | name: to_clone}
+    header = def_header(meta)
+    {meta, header, body}
   end
 
   defp translate_column_families(type_spec) do

@@ -2,16 +2,9 @@ defmodule AlchemyTable.Schema do
   @moduledoc """
   Allows the creation of typed Bigtable schemas.
   """
-
   defmacro __using__(_opt) do
     quote do
-      import unquote(__MODULE__)
-      Module.register_attribute(__MODULE__, :rows, accumulate: true)
-      Module.register_attribute(__MODULE__, :columns, accumulate: true)
-
-      def instance do
-        Bigtable.Utils.configured_instance_name()
-      end
+      import unquote(__MODULE__), only: :macros
     end
   end
 
@@ -53,6 +46,10 @@ defmodule AlchemyTable.Schema do
           promoted: @promoted,
           schema: schema()
         }
+      end
+
+      def instance do
+        Bigtable.Utils.configured_instance_name()
       end
 
       def schema do

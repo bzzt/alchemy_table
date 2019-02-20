@@ -46,7 +46,8 @@ defmodule BT.Schema.RideTest do
 
   @cloned [
     :user_ride,
-    :driver_ride
+    :driver_ride,
+    {:ride_ts, ts: true}
   ]
 
   table :ride do
