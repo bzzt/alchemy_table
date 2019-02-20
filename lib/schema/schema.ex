@@ -7,7 +7,6 @@ defmodule AlchemyTable.Schema do
     quote do
       import unquote(__MODULE__)
       Module.register_attribute(__MODULE__, :rows, accumulate: true)
-      Module.register_attribute(__MODULE__, :families, accumulate: true)
       Module.register_attribute(__MODULE__, :columns, accumulate: true)
 
       def instance do
@@ -35,24 +34,28 @@ defmodule AlchemyTable.Schema do
   @doc """
   Defines a schema to be used when reading and mutating Bigtable rows.
   """
-
   defmacro table(name, do: block) do
+    instance = Bigtable.Utils.configured_instance_name()
+
     quote do
+      Module.register_attribute(__MODULE__, :families, accumulate: true)
       Module.register_attribute(__MODULE__, :promoted, accumlate: true)
+      # TODO: Use a different way to identify during schema generation
       @behaviour unquote(__MODULE__)
-      @name unquote(to_string(name))
       unquote(block)
       defstruct @families
 
       def metadata do
         %{
-          name: @name,
-          instance: instance(),
-          type: type()
+          name: unquote(name),
+          instance: unquote(instance),
+          cloned: @cloned,
+          promoted: @promoted,
+          schema: schema()
         }
       end
 
-      def type do
+      def schema do
         %__MODULE__{}
       end
     end
@@ -89,7 +92,7 @@ defmodule AlchemyTable.Schema do
 
   If the column value is defined as either `:map` or `:list`, the value will be JSON encoded during mutations and decoded during reads.
   """
-  defmacro column(key, {:__aliases__, _, _} = value, opts) do
+  defmacro column(key, {:__aliases__, _, _} = value) do
     type =
       Macro.expand(value, __CALLER__)
       |> apply(:type, [])
@@ -102,7 +105,7 @@ defmodule AlchemyTable.Schema do
     end
   end
 
-  defmacro column(key, value, _opts) do
+  defmacro column(key, value) do
     c = {key, value}
 
     quote do
@@ -110,20 +113,17 @@ defmodule AlchemyTable.Schema do
     end
   end
 
-  defmacro column(key, value) do
-    quote do
-      column(unquote(key), unquote(value), [])
-    end
-  end
-
   defmacro promoted(key, value) do
+    module = Macro.expand(value, __CALLER__)
+
     base_type =
-      Macro.expand(value, __CALLER__)
-      |> apply(:type, [])
+      module
+      |> apply(:schema, [])
       |> Map.from_struct()
       |> Macro.escape()
 
     quote do
+      @promoted [{[var!(name), unquote(key)], unquote(module)}]
       type = unquote(base_type) |> get_in([var!(name), unquote(key)])
       var!(columns) = [{unquote(key), type} | var!(columns)]
     end

@@ -9,13 +9,19 @@ defmodule Mix.Tasks.BigQuery.Schemas do
     |> Enum.filter(&implements_schema?/1)
     |> Enum.map(&elem(&1, 0))
     |> Enum.map(&get_metadata/1)
-    |> Enum.map(&build_spec/1)
-    |> Enum.map(&write_def/1)
+    |> Enum.map(&build_definition/1)
+    |> Enum.map(&clone_definition/1)
+    |> List.flatten()
+    |> Enum.each(&write_def/1)
   end
 
-  defp write_def({name, schema}) do
-    "#{@schema_dir}/#{name}.json"
-    |> File.write!(schema)
+  defp write_def({metadata, def_header, def_body}) do
+    definition =
+      Map.merge(def_header, def_body)
+      |> Poison.encode!(pretty: true)
+
+    "#{@schema_dir}/#{metadata.name}.json"
+    |> File.write!(definition)
   end
 
   defp get_module_attributes(path) do
@@ -29,19 +35,34 @@ defmodule Mix.Tasks.BigQuery.Schemas do
 
   defp get_metadata(module), do: apply(module, :metadata, [])
 
-  defp build_spec(metadata) do
-    base_spec = base_def(metadata)
-    type_spec = Map.from_struct(metadata.type)
+  defp build_definition(metadata) do
+    header = def_header(metadata)
+    type_spec = Map.from_struct(metadata.schema)
 
-    column_defs = translate_column_families(type_spec)
+    definition = %{
+      bigtableOptions: %{
+        columnFamilies: translate_column_families(type_spec),
+        readRowkeyAsString: true
+      }
+    }
 
-    json_spec =
-      Map.merge(base_spec, %{
-        bigtableOptions: %{columnFamilies: column_defs, readRowkeyAsString: true}
-      })
-      |> Poison.encode!(pretty: true)
+    {metadata, header, definition}
+  end
 
-    {metadata.name, json_spec}
+  defp clone_definition({metadata, _header, body} = definition) do
+    if metadata.cloned == nil do
+      definition
+    else
+      cloned =
+        metadata.cloned
+        |> Enum.map(fn to_clone ->
+          meta = %{metadata | name: to_clone}
+          header = def_header(meta)
+          {meta, header, body}
+        end)
+
+      [definition | cloned]
+    end
   end
 
   defp translate_column_families(type_spec) do
@@ -86,8 +107,10 @@ defmodule Mix.Tasks.BigQuery.Schemas do
     end
   end
 
-  defp base_def(%{instance: instance, name: name}) do
-    table_name = Recase.KebabCase.convert(name)
+  defp def_header(%{instance: instance, name: name}) do
+    table_name =
+      to_string(name)
+      |> Recase.KebabCase.convert()
 
     %{
       sourceFormat: "BIGTABLE",

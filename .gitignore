@@ -24,3 +24,4 @@ erl_crash.dump
 alchemy_table-*.tar
 .DS_Store
 schema-defs
+lib/test_schemas.ex

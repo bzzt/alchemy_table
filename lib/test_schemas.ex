@@ -39,3 +39,20 @@ defmodule BT.Schema.VehicleTest do
     end
   end
 end
+
+defmodule BT.Schema.RideTest do
+  alias BT.Schema.{VehiclePositionTest}
+  use AlchemyTable.Schema
+
+  @cloned [
+    :user_ride,
+    :driver_ride
+  ]
+
+  table :ride do
+    family :ride do
+      column(:acceptedAt, :string)
+      column(:approachFrom, VehiclePositionTest)
+    end
+  end
+end
