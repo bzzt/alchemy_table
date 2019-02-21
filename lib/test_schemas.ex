@@ -23,18 +23,21 @@ defmodule BT.Schema.RideTest do
   alias BT.Schema.{RidePositionTest, RideStateTest}
   use AlchemyTable.Schema
 
-  @cloned [
-    {:driver_ride, row_key: "RIDE#[ride.driver]#[ride.acceptedAt]"},
-    {:ride_ts, ts: true}
-  ]
-
   table :ride, row_key: "RIDE#[ride.id]" do
+    cloned(:driver_ride, row_key: "RIDE#[ride.driver]#[ride.acceptedAt]")
+    cloned(:ride_ts, ts: true)
+
     family :ride do
       column(:acceptedAt, :string)
       column(:approachFrom, RidePositionTest)
       column(:driver, :string)
       column(:id, :string)
       promoted(:state, RideStateTest)
+      promoted(:other, RideStateTest)
+    end
+
+    family :other do
+      column(:a, :string)
     end
   end
 end
