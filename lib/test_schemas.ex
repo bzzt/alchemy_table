@@ -45,8 +45,7 @@ defmodule BT.Schema.RideTest do
   use AlchemyTable.Schema
 
   @cloned [
-    :user_ride,
-    :driver_ride,
+    {:driver_ride, row_key: "RIDE#[ride.driver]#[ride.acceptedAt]"},
     {:ride_ts, ts: true}
   ]
 
@@ -54,6 +53,8 @@ defmodule BT.Schema.RideTest do
     family :ride do
       column(:acceptedAt, :string)
       column(:approachFrom, VehiclePositionTest)
+      column(:driver, :string)
+      column(:id, :string)
     end
   end
 end

@@ -27,50 +27,20 @@ defmodule AlchemyTable.Schema do
   @doc """
   Defines a schema to be used when reading and mutating Bigtable rows.
   """
-  defp atoms_from_dots(string) do
-    string
-    |> String.replace(~r/[\[\]]/, "")
-    |> String.split(".")
-    |> Enum.map(&String.to_atom/1)
-  end
 
   defmacro table(name, opts, do: block) do
-    key_parts =
-      Keyword.fetch!(opts, :row_key)
-      |> String.split("#")
-      |> Enum.map(fn string ->
-        case Regex.run(~r/\[(.*)\]/, string) do
-          [h | _] ->
-            atoms_from_dots(h)
-
-          nil ->
-            string
-        end
-      end)
-
     instance = Bigtable.Utils.configured_instance_name()
 
     quote do
+      alias AlchemyTable.Operations.Update
+      import AlchemyTable.Schema.Table
       Module.register_attribute(__MODULE__, :families, accumulate: true)
       Module.register_attribute(__MODULE__, :promoted, accumlate: true)
       # TODO: Use a different way to identify during schema generation
       @behaviour unquote(__MODULE__)
+      @key_parts unquote(opts) |> build_key_parts()
       unquote(block)
       defstruct @families
-
-      def row_key(r) do
-        IO.inspect(unquote(key_parts))
-
-        unquote(key_parts)
-        |> Enum.map(fn kp ->
-          if is_list(kp) do
-            get_in(r, kp)
-          else
-            kp
-          end
-        end)
-        |> Enum.join("#")
-      end
 
       def metadata do
         %{
@@ -88,6 +58,17 @@ defmodule AlchemyTable.Schema do
 
       def schema do
         %__MODULE__{}
+      end
+
+      def update(data) do
+        %{cloned: cloned} = metadata()
+
+        main_update =
+          build_row_key(data, @key_parts)
+          |> Update.update(schema(), data)
+
+        IO.inspect(main_update)
+        IO.inspect(cloned)
       end
     end
   end
