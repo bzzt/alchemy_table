@@ -1,4 +1,6 @@
 defmodule AlchemyTable.Schema.Table do
+  alias Bigtable.MutateRow
+
   def atoms_from_dots(string) do
     string
     |> String.replace(~r/[\[\]]/, "")
@@ -51,7 +53,7 @@ defmodule AlchemyTable.Schema.Table do
     Keyword.get(opts, :row_key)
   end
 
-  def clone_update({name, opts}, main_key, main_update, data) do
+  def clone_update(main_key, main_update, data, opts) do
     key =
       case get_key_pattern(opts) do
         nil ->
@@ -65,6 +67,13 @@ defmodule AlchemyTable.Schema.Table do
 
     key = key |> add_ts(opts)
 
-    {name, %{main_update | row_key: key}}
+    %{main_update | row_key: key}
+  end
+
+  def build_mutate_row({instance, table, mutations}) do
+    table_name = to_string(table) |> Recase.to_kebab()
+
+    mutations
+    |> MutateRow.build("#{instance}/tables/#{table_name}")
   end
 end

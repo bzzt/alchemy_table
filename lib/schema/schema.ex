@@ -36,7 +36,6 @@ defmodule AlchemyTable.Schema do
       import AlchemyTable.Schema.Table
       Module.register_attribute(__MODULE__, :families, accumulate: true)
       Module.register_attribute(__MODULE__, :promoted, accumlate: true)
-      Module.register_attribute(__MODULE__, :ts_tables, accumlate: true)
       # TODO: Use a different way to identify during schema generation
       @behaviour unquote(__MODULE__)
       @key_parts unquote(opts) |> get_key_pattern!() |> build_key_parts()
@@ -49,7 +48,6 @@ defmodule AlchemyTable.Schema do
           instance: unquote(instance),
           cloned: @cloned,
           promoted: @promoted,
-          ts_tables: @ts_tables,
           schema: schema()
         }
       end
@@ -62,7 +60,9 @@ defmodule AlchemyTable.Schema do
         %__MODULE__{}
       end
 
-      def update(data) do
+      def build_updates(data) do
+        %{cloned: cloned, promoted: promoted, instance: instance} = metadata()
+
         main_key =
           build_row_key(@key_parts, data)
           |> add_ts(unquote(opts))
@@ -72,10 +72,33 @@ defmodule AlchemyTable.Schema do
           |> Update.update(schema(), data)
 
         cloned_updates =
-          @cloned
-          |> Enum.map(&clone_update(&1, main_key, main_update, data))
+          if cloned != nil do
+            for {table_name, opts} <- cloned, into: [] do
+              update = clone_update(main_key, main_update, data, opts)
+              {instance, table_name, update}
+            end
+          else
+            []
+          end
 
-        [{unquote(name), main_update} | cloned_updates]
+        promoted_updates =
+          if promoted != nil do
+            for {column, module} <- promoted,
+                get_in(data, column) != nil,
+                into: [] do
+              apply(module, :build_updates, [data])
+            end
+          else
+            []
+          end
+
+        [{instance, unquote(name), main_update}, cloned_updates, promoted_updates]
+        |> List.flatten()
+      end
+
+      def update(data) do
+        build_updates(data)
+        |> Enum.map(&build_mutate_row/1)
       end
     end
   end
@@ -132,26 +155,19 @@ defmodule AlchemyTable.Schema do
     end
   end
 
-  defmacro ts_column(key, value) do
+  defmacro promoted(key, value) do
+    module = Macro.expand(value, __CALLER__)
+
+    base_type =
+      module
+      |> apply(:schema, [])
+      |> Map.from_struct()
+      |> Macro.escape()
+
     quote do
-      @ts_tables [[var!(name), unquote(key)]]
-      column(unquote(key), unquote(value))
+      @promoted [{[var!(name), unquote(key)], unquote(module)}]
+      type = unquote(base_type) |> get_in([var!(name), unquote(key)])
+      var!(columns) = [{unquote(key), type} | var!(columns)]
     end
   end
-
-  # defmacro promoted(key, value) do
-  # module = Macro.expand(value, __CALLER__)
-
-  # base_type =
-  # module
-  # |> apply(:schema, [])
-  # |> Map.from_struct()
-  # |> Macro.escape()
-
-  # quote do
-  # @promoted [{[var!(name), unquote(key)], unquote(module)}]
-  # type = unquote(base_type) |> get_in([var!(name), unquote(key)])
-  # var!(columns) = [{unquote(key), type} | var!(columns)]
-  # end
-  # end
 end

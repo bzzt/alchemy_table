@@ -1,14 +1,4 @@
-# defmodule BT.Schema.VehicleStateTest do
-#   use AlchemyTable.Schema
-
-#   table :vehicle_state do
-#     family :vehicle do
-#       column(:state, :string)
-#     end
-#   end
-# end
-
-defmodule BT.Schema.VehiclePositionTest do
+defmodule BT.Schema.RidePositionTest do
   use AlchemyTable.Schema
 
   type do
@@ -19,29 +9,18 @@ defmodule BT.Schema.VehiclePositionTest do
   end
 end
 
-# defmodule BT.Schema.VehicleTest do
-#   alias BT.Schema.{VehiclePositionTest, VehicleStateTest}
-#   use AlchemyTable.Schema
+defmodule BT.Schema.RideStateTest do
+  use AlchemyTable.Schema
 
-#   table :vehicle do
-#     family :vehicle do
-#       column(:battery, :integer)
-#       column(:checkedInAt, :string)
-#       column(:condition, :string)
-#       column(:driver, :string)
-#       column(:fleet, :string)
-#       column(:id, :string)
-#       column(:numberPlate, :string)
-#       column(:position, VehiclePositionTest)
-#       column(:previousPosition, VehiclePositionTest)
-#       column(:ride, :string)
-#       promoted(:state, VehicleStateTest)
-#     end
-#   end
-# end
+  table :ride_state, row_key: "RIDE#[ride.id]", ts: true do
+    family :ride do
+      column(:state, :string)
+    end
+  end
+end
 
 defmodule BT.Schema.RideTest do
-  alias BT.Schema.{VehiclePositionTest}
+  alias BT.Schema.{RidePositionTest, RideStateTest}
   use AlchemyTable.Schema
 
   @cloned [
@@ -52,10 +31,10 @@ defmodule BT.Schema.RideTest do
   table :ride, row_key: "RIDE#[ride.id]" do
     family :ride do
       column(:acceptedAt, :string)
-      column(:approachFrom, VehiclePositionTest)
+      column(:approachFrom, RidePositionTest)
       column(:driver, :string)
       column(:id, :string)
-      ts_column(:state, :string)
+      promoted(:state, RideStateTest)
     end
   end
 end
