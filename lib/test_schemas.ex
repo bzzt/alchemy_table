@@ -55,6 +55,7 @@ defmodule BT.Schema.RideTest do
       column(:approachFrom, VehiclePositionTest)
       column(:driver, :string)
       column(:id, :string)
+      ts_column(:state, :string)
     end
   end
 end

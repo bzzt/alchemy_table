@@ -6,8 +6,8 @@ defmodule AlchemyTable.Schema.Table do
     |> Enum.map(&String.to_atom/1)
   end
 
-  def build_key_parts(opts) do
-    Keyword.fetch!(opts, :row_key)
+  def build_key_parts(key_pattern) do
+    key_pattern
     |> String.split("#")
     |> Enum.map(fn string ->
       case Regex.run(~r/\[(.*)\]/, string) do
@@ -20,11 +20,11 @@ defmodule AlchemyTable.Schema.Table do
     end)
   end
 
-  def build_row_key(r, key_parts) do
+  def build_row_key(key_parts, data) do
     key_parts
     |> Enum.map(fn kp ->
       if is_list(kp) do
-        get_in(r, kp)
+        get_in(data, kp)
       else
         kp
       end
@@ -32,47 +32,39 @@ defmodule AlchemyTable.Schema.Table do
     |> Enum.join("#")
   end
 
-  #   def get_all do
-  #     rows = Get.get_all(@prefix)
+  def add_ts(key, opts) do
+    ts_suffix =
+      if Keyword.get(opts, :ts, false) do
+        "#current-ts"
+      else
+        ""
+      end
 
-  #     rows
-  #     |> parse_result()
-  #   end
+    key <> ts_suffix
+  end
 
-  #   def get_by_id(ids) when is_list(ids) do
-  #     rows = Get.get_by_id(ids, @prefix)
+  def get_key_pattern!(opts) do
+    Keyword.fetch!(opts, :row_key)
+  end
 
-  #     rows
-  #     |> parse_result()
-  #   end
+  def get_key_pattern(opts) do
+    Keyword.get(opts, :row_key)
+  end
 
-  #   def get_by_id(id) when is_binary(id) do
-  #     get_by_id([id])
-  #   end
+  def clone_update({name, opts}, main_key, main_update, data) do
+    key =
+      case get_key_pattern(opts) do
+        nil ->
+          main_key
 
-  #   def update(maps) when is_list(maps) do
-  #     Update.update(__MODULE__.type(), maps, @prefix, @update_patterns)
-  #   end
+        key ->
+          key
+          |> build_key_parts()
+          |> build_row_key(data)
+      end
 
-  # def update(map) when is_map(map) do
-  # meta =
-  # __MODULE__.metadata()
-  # |> IO.inspect()
-  # end
+    key = key |> add_ts(opts)
 
-  #   def delete(ids) when is_list(ids) do
-  #     Delete.delete_by_id(ids, @prefix)
-  #   end
-
-  #   def delete(id) when is_binary(id) do
-  #     delete([id])
-  #   end
-
-  #   def delete_all do
-  #     Delete.delete_all()
-  #   end
-
-  #   def parse_result(result) do
-  #     Reads.parse_result(result, __MODULE__.type())
-  #   end
+    {name, %{main_update | row_key: key}}
+  end
 end
