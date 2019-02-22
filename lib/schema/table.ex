@@ -1,79 +1,144 @@
-defmodule AlchemyTable.Schema.Table do
-  alias Bigtable.MutateRow
-
-  def atoms_from_dots(string) do
-    string
-    |> String.replace(~r/[\[\]]/, "")
-    |> String.split(".")
-    |> Enum.map(&String.to_atom/1)
+defmodule AlchemyTable.Table do
+  defmacro __using__(_opt) do
+    quote do
+      alias AlchemyTable.Operations.Update
+      import unquote(__MODULE__)
+      import AlchemyTable.Table.Utils
+      @behaviour unquote(__MODULE__)
+      Module.register_attribute(__MODULE__, :families, accumulate: true)
+      Module.register_attribute(__MODULE__, :promoted, accumulate: true)
+      Module.register_attribute(__MODULE__, :cloned, accumulate: true)
+    end
   end
 
-  def build_key_parts(key_pattern) do
-    key_pattern
-    |> String.split("#")
-    |> Enum.map(fn string ->
-      case Regex.run(~r/\[(.*)\]/, string) do
-        [h | _] ->
-          atoms_from_dots(h)
+  defmacro table(name, opts, do: block) do
+    instance = Bigtable.Utils.configured_instance_name()
 
-        nil ->
-          string
-      end
-    end)
-  end
+    quote do
+      @key_parts unquote(opts) |> get_key_pattern!() |> build_key_parts()
+      unquote(block)
+      defstruct @families
 
-  def build_row_key(key_parts, data) do
-    key_parts
-    |> Enum.map(fn kp ->
-      if is_list(kp) do
-        get_in(data, kp)
-      else
-        kp
-      end
-    end)
-    |> Enum.join("#")
-  end
-
-  def add_ts(key, opts) do
-    ts_suffix =
-      if Keyword.get(opts, :ts, false) do
-        "#current-ts"
-      else
-        ""
+      def metadata do
+        %{
+          name: unquote(name),
+          instance: unquote(instance),
+          cloned: @cloned,
+          promoted: @promoted,
+          schema: schema()
+        }
       end
 
-    key <> ts_suffix
-  end
+      def schema do
+        %__MODULE__{}
+      end
 
-  def get_key_pattern!(opts) do
-    Keyword.fetch!(opts, :row_key)
-  end
+      def build_updates(data) do
+        %{cloned: cloned, promoted: promoted, instance: instance} = metadata()
 
-  def get_key_pattern(opts) do
-    Keyword.get(opts, :row_key)
-  end
+        main_key =
+          build_row_key(@key_parts, data)
+          |> add_ts(unquote(opts))
 
-  def clone_update(main_key, main_update, data, opts) do
-    key =
-      case get_key_pattern(opts) do
-        nil ->
+        main_update =
           main_key
+          |> Update.update(schema(), data)
 
-        key ->
-          key
-          |> build_key_parts()
-          |> build_row_key(data)
+        cloned_updates =
+          for {table_name, opts} <- cloned, into: [] do
+            update = clone_update(main_key, main_update, data, opts)
+            {instance, table_name, update}
+          end
+
+        promoted_updates =
+          for {column, module} <- promoted,
+              get_in(data, column) != nil,
+              into: [] do
+            apply(module, :build_updates, [data])
+          end
+
+        [{instance, unquote(name), main_update}, cloned_updates, promoted_updates]
+        |> List.flatten()
       end
 
-    key = key |> add_ts(opts)
-
-    %{main_update | row_key: key}
+      def update(data) do
+        build_updates(data)
+        |> Enum.map(&build_mutate_row/1)
+      end
+    end
   end
 
-  def build_mutate_row({instance, table, mutations}) do
-    table_name = to_string(table) |> Recase.to_kebab()
+  defmacro cloned(name, opts) do
+    quote do
+      @cloned {unquote(name), unquote(opts)}
+    end
+  end
 
-    mutations
-    |> MutateRow.build("#{instance}/tables/#{table_name}")
+  defmacro promoted(key, value) do
+    module = Macro.expand(value, __CALLER__)
+
+    base_type =
+      module
+      |> apply(:schema, [])
+      |> Map.from_struct()
+      |> Macro.escape()
+
+    quote do
+      @promoted {[var!(name), unquote(key)], unquote(module)}
+      type = unquote(base_type) |> get_in([var!(name), unquote(key)])
+      var!(columns) = [{unquote(key), type} | var!(columns)]
+    end
+  end
+
+  @doc """
+  Defines a column family inside a `Bigtable.Schema.row/2` definition.
+
+  The name of the family should be provided to the macro as an atom.
+
+  The block of the macro should only contain `Bigtable.Schema.column/2` definitions.
+  """
+  defmacro family(name, do: block) do
+    quote do
+      var!(name) = unquote(name)
+      var!(columns) = []
+      unquote(block)
+      @families {unquote(name), Map.new(var!(columns))}
+    end
+  end
+
+  @doc """
+  Defines a column inside a `Bigtable.Schema.family/2` definition.
+
+  The first argument is an atom that will define the column's name.
+
+  The second argument defines the column's type and should be one of:
+  - `:integer`
+  - `:float`
+  - `:boolean`
+  - `:string`
+  - `:map`
+  - `:list`
+
+  If the column value is defined as either `:map` or `:list`, the value will be JSON encoded during mutations and decoded during reads.
+  """
+  defmacro column(key, {:__aliases__, _, _} = value) do
+    type =
+      Macro.expand(value, __CALLER__)
+      |> apply(:type, [])
+      |> Macro.escape()
+
+    c = {key, type}
+
+    quote do
+      var!(columns) = [unquote(c) | var!(columns)]
+    end
+  end
+
+  defmacro column(key, value) do
+    c = {key, value}
+
+    quote do
+      var!(columns) = [unquote(c) | var!(columns)]
+    end
   end
 end

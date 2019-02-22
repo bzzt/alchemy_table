@@ -1,16 +1,16 @@
 defmodule BT.Schema.RidePositionTest do
-  use AlchemyTable.Schema
+  use AlchemyTable.Type
 
   type do
-    column(:bearing, :integer)
-    column(:latitude, :float)
-    column(:longitude, :float)
-    column(:timestamp, :string)
+    field(:bearing, :integer)
+    field(:latitude, :float)
+    field(:longitude, :float)
+    field(:timestamp, :string)
   end
 end
 
 defmodule BT.Schema.RideStateTest do
-  use AlchemyTable.Schema
+  use AlchemyTable.Table
 
   table :ride_state, row_key: "RIDE#[ride.id]", ts: true do
     family :ride do
@@ -21,7 +21,7 @@ end
 
 defmodule BT.Schema.RideTest do
   alias BT.Schema.{RidePositionTest, RideStateTest}
-  use AlchemyTable.Schema
+  use AlchemyTable.Table
 
   table :ride, row_key: "RIDE#[ride.id]" do
     cloned(:driver_ride, row_key: "RIDE#[ride.driver]#[ride.acceptedAt]")
@@ -33,7 +33,6 @@ defmodule BT.Schema.RideTest do
       column(:driver, :string)
       column(:id, :string)
       promoted(:state, RideStateTest)
-      promoted(:other, RideStateTest)
     end
 
     family :other do
