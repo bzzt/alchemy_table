@@ -1,6 +1,6 @@
 defmodule AlchemyTable.Operations.Update do
   @moduledoc false
-  alias AlchemyTable.{Mutations, Utils, Validation}
+  alias AlchemyTable.Mutations
   # alias Bigtable.MutateRows
 
   # def update(type_spec, maps, row_prefix, update_patterns) do
@@ -21,7 +21,6 @@ defmodule AlchemyTable.Operations.Update do
   #   |> List.flatten()
   #   |> MutateRows.build()
   # end
-
   def update(row_key, type_spec, map) do
     Mutations.create_mutations(row_key, type_spec, map)
   end

@@ -20,12 +20,12 @@ defmodule BT.Schema.RideStateTest do
 end
 
 defmodule BT.Schema.RideTest do
-  alias BT.Schema.{RidePositionTest, RideStateTest}
+  alias BT.Schema.{DriverRideTest, RidePositionTest, RideStateTest, RideTsTest}
   use AlchemyTable.Table
 
   @cloned [
-    BT.Schema.RideTsTest,
-    BT.Schema.DriverRideTest
+    RideTsTest,
+    DriverRideTest
   ]
 
   table :ride, row_key: "RIDE#[ride.id]" do
@@ -48,7 +48,7 @@ defmodule BT.Schema.RideTsTest do
   use AlchemyTable.Table
 
   table :ride_ts, row_key: "RIDE#[ride.id]", ts: true do
-    clone(BT.Schema.RideTest)
+    clone(RideTest)
   end
 end
 
@@ -57,6 +57,6 @@ defmodule BT.Schema.DriverRideTest do
   use AlchemyTable.Table
 
   table :driver_ride, row_key: "RIDE#[ride.driver]#[ride.acceptedAt]" do
-    clone(BT.Schema.RideTest)
+    clone(RideTest)
   end
 end

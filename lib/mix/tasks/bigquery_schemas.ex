@@ -5,27 +5,20 @@ defmodule Mix.Tasks.BigQuery.Schemas do
     File.mkdir(@schema_dir)
 
     Path.wildcard(Path.join([Mix.Project.build_path(), "**/ebin/**/*.beam"]))
-    |> Enum.map(&get_module_attributes/1)
+    |> Enum.map(&get_module_exports/1)
     |> Enum.filter(&implements_schema?/1)
     |> Enum.map(&elem(&1, 0))
     |> Enum.map(&get_metadata/1)
     |> Enum.map(&build_definition/1)
-    |> Enum.map(&clone_definitions/1)
-    |> Enum.each(&write_defs/1)
+    |> Enum.each(&write_def/1)
   end
 
-  defp write_defs([{metadata, _, _} | _] = defs) when is_list(defs) do
-    dir = "#{@schema_dir}/#{metadata.name}"
-    File.mkdir(dir)
-    Enum.each(defs, &write_def(&1, dir))
-  end
-
-  defp write_defs(d), do: write_def(d)
-
-  defp write_def({metadata, def_header, def_body}, dir \\ @schema_dir) do
+  defp write_def({metadata, def_header, def_body}) do
     definition = to_json(def_header, def_body)
 
-    "#{dir}/#{metadata.name}.json"
+    IO.inspect(definition)
+
+    "#{@schema_dir}/#{metadata.name}.json"
     |> File.write!(definition)
   end
 
@@ -34,13 +27,15 @@ defmodule Mix.Tasks.BigQuery.Schemas do
     |> Poison.encode!(pretty: true)
   end
 
-  defp get_module_attributes(path) do
-    {:ok, {mod, chunks}} = :beam_lib.chunks('#{path}', [:attributes])
-    {mod, get_in(chunks, [:attributes, :behaviour])}
+  defp get_module_exports(path) do
+    {:ok, {mod, exports}} = :beam_lib.chunks('#{path}', [:exports])
+    {mod, exports}
   end
 
-  defp implements_schema?({_, behaviours}) do
-    is_list(behaviours) and Enum.member?(behaviours, AlchemyTable.Schema)
+  defp implements_schema?({_mod, exports}) do
+    exports
+    |> Keyword.get(:exports)
+    |> Keyword.has_key?(:__alchemy_schema__)
   end
 
   defp get_metadata(module), do: apply(module, :metadata, [])
@@ -57,26 +52,6 @@ defmodule Mix.Tasks.BigQuery.Schemas do
     }
 
     {metadata, header, definition}
-  end
-
-  defp clone_definitions({metadata, _header, _body} = definition) do
-    if metadata.cloned == nil do
-      definition
-    else
-      cloned =
-        metadata.cloned
-        |> Enum.map(&clone(&1, definition))
-
-      [definition | cloned]
-    end
-  end
-
-  def clone({to_clone, _opts}, definition), do: clone(to_clone, definition)
-
-  def clone(to_clone, {metadata, _, body}) do
-    meta = %{metadata | name: to_clone}
-    header = def_header(meta)
-    {meta, header, body}
   end
 
   defp translate_column_families(type_spec) do

@@ -4,7 +4,6 @@ defmodule AlchemyTable.Table do
       alias AlchemyTable.Operations.Update
       import unquote(__MODULE__)
       import AlchemyTable.Table.Utils
-      @behaviour unquote(__MODULE__)
       Module.register_attribute(__MODULE__, :families, accumulate: true)
       Module.register_attribute(__MODULE__, :promoted, accumulate: true)
       Module.register_attribute(__MODULE__, :cloned, accumulate: true)
@@ -26,16 +25,16 @@ defmodule AlchemyTable.Table do
           cloned: @cloned,
           promoted: @promoted,
           opts: unquote(opts),
-          schema: schema()
+          schema: __alchemy_schema__()
         }
       end
 
-      def schema do
+      def __alchemy_schema__ do
         %__MODULE__{}
       end
 
       def build_updates(data) do
-        %{cloned: cloned, promoted: promoted, instance: instance} = metadata()
+        %{cloned: cloned, promoted: promoted, instance: instance, schema: schema} = metadata()
         cloned = cloned |> List.flatten()
 
         main_key =
@@ -44,7 +43,7 @@ defmodule AlchemyTable.Table do
 
         main_update =
           main_key
-          |> AlchemyTable.Operations.Update.update(schema(), data)
+          |> AlchemyTable.Operations.Update.update(schema, data)
 
         cloned_updates =
           for table <- List.flatten(cloned), into: [] do
@@ -75,7 +74,7 @@ defmodule AlchemyTable.Table do
   defmacro clone(module) do
     families =
       Macro.expand(module, __CALLER__)
-      |> apply(:schema, [])
+      |> apply(:__alchemy_schema__, [])
       |> Map.from_struct()
       |> Map.to_list()
       |> Macro.escape()
@@ -87,18 +86,12 @@ defmodule AlchemyTable.Table do
     end
   end
 
-  # defmacro cloned(name, opts) do
-  #   quote do
-  #     @cloned {unquote(name), unquote(opts)}
-  #   end
-  # end
-
   defmacro promoted(key, value) do
     module = Macro.expand(value, __CALLER__)
 
     base_type =
       module
-      |> apply(:schema, [])
+      |> apply(:__alchemy_schema__, [])
       |> Map.from_struct()
       |> Macro.escape()
 
