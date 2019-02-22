@@ -25,6 +25,7 @@ defmodule AlchemyTable.Table do
           instance: unquote(instance),
           cloned: @cloned,
           promoted: @promoted,
+          opts: unquote(opts),
           schema: schema()
         }
       end
@@ -35,6 +36,7 @@ defmodule AlchemyTable.Table do
 
       def build_updates(data) do
         %{cloned: cloned, promoted: promoted, instance: instance} = metadata()
+        cloned = cloned |> List.flatten()
 
         main_key =
           build_row_key(@key_parts, data)
@@ -42,10 +44,12 @@ defmodule AlchemyTable.Table do
 
         main_update =
           main_key
-          |> Update.update(schema(), data)
+          |> AlchemyTable.Operations.Update.update(schema(), data)
 
         cloned_updates =
-          for {table_name, opts} <- cloned, into: [] do
+          for table <- List.flatten(cloned), into: [] do
+            meta = table.metadata()
+            %{name: table_name, instance: instance, opts: opts} = meta
             update = clone_update(main_key, main_update, data, opts)
             {instance, table_name, update}
           end
@@ -68,11 +72,26 @@ defmodule AlchemyTable.Table do
     end
   end
 
-  defmacro cloned(name, opts) do
+  defmacro clone(module) do
+    families =
+      Macro.expand(module, __CALLER__)
+      |> apply(:schema, [])
+      |> Map.from_struct()
+      |> Map.to_list()
+      |> Macro.escape()
+
     quote do
-      @cloned {unquote(name), unquote(opts)}
+      for family <- unquote(families) do
+        @families family
+      end
     end
   end
+
+  # defmacro cloned(name, opts) do
+  #   quote do
+  #     @cloned {unquote(name), unquote(opts)}
+  #   end
+  # end
 
   defmacro promoted(key, value) do
     module = Macro.expand(value, __CALLER__)
