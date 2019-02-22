@@ -16,8 +16,6 @@ defmodule Mix.Tasks.BigQuery.Schemas do
   defp write_def({metadata, def_header, def_body}) do
     definition = to_json(def_header, def_body)
 
-    IO.inspect(definition)
-
     "#{@schema_dir}/#{metadata.name}.json"
     |> File.write!(definition)
   end
