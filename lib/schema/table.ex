@@ -33,13 +33,13 @@ defmodule AlchemyTable.Table do
         %__MODULE__{}
       end
 
-      def build_updates(data) do
+      def build_updates(data, timestamp) do
         %{cloned: cloned, promoted: promoted, instance: instance, schema: schema} = metadata()
         cloned = cloned |> List.flatten()
 
         main_key =
           build_row_key(@key_parts, data)
-          |> add_ts(unquote(opts))
+          |> add_ts(unquote(opts), timestamp)
 
         main_update =
           main_key
@@ -49,7 +49,7 @@ defmodule AlchemyTable.Table do
           for table <- List.flatten(cloned), into: [] do
             meta = table.metadata()
             %{name: table_name, instance: instance, opts: opts} = meta
-            update = clone_update(main_key, main_update, data, opts)
+            update = clone_update(main_key, main_update, data, opts, timestamp)
             {instance, table_name, update}
           end
 
@@ -57,15 +57,15 @@ defmodule AlchemyTable.Table do
           for {column, module} <- promoted,
               get_in(data, column) != nil,
               into: [] do
-            apply(module, :build_updates, [data])
+            apply(module, :build_updates, [data, timestamp])
           end
 
         [{instance, unquote(name), main_update}, cloned_updates, promoted_updates]
         |> List.flatten()
       end
 
-      def update(data) do
-        build_updates(data)
+      def update(data, timestamp \\ DateTime.utc_now()) do
+        build_updates(data, timestamp)
         |> Enum.map(&build_mutate_row/1)
       end
     end
