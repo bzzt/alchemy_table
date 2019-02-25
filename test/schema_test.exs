@@ -1,31 +1,27 @@
 defmodule SchemaTest do
   use ExUnit.Case
 
-  doctest AlchemyTable.Schema
-
   defmodule OneColumnType do
-    use AlchemyTable.Schema
+    use AlchemyTable.Type
 
     type do
-      column(:a, :integer)
+      field(:a, :integer)
     end
   end
 
   defmodule TwoColumnType do
-    use AlchemyTable.Schema
+    use AlchemyTable.Type
 
     type do
-      column(:a, :integer)
-      column(:b, :boolean)
+      field(:a, :integer)
+      field(:b, :boolean)
     end
   end
 
   defmodule TestSchema do
-    use AlchemyTable.Schema
+    use AlchemyTable.Table
 
-    @update_patterns ["family_a.a"]
-
-    row :entity do
+    table :entity, row_key: "ENTITY#[family_a.a]" do
       family :family_a do
         column(:a, :string)
         column(:b, :map)
@@ -34,11 +30,9 @@ defmodule SchemaTest do
   end
 
   defmodule TestSchemaWithType do
-    use AlchemyTable.Schema
+    use AlchemyTable.Table
 
-    @update_patterns ["family_a.a"]
-
-    row :entity do
+    table :entity, row_key: "ENTITY#[family_a.a]" do
       family :family_a do
         column(:a, :string)
         column(:b, :map)
@@ -79,7 +73,7 @@ defmodule SchemaTest do
         }
       }
 
-      assert SchemaTest.TestSchema.type() == expected
+      assert SchemaTest.TestSchema.__alchemy_schema__() == expected
     end
   end
 
@@ -100,6 +94,6 @@ defmodule SchemaTest do
       }
     }
 
-    assert SchemaTest.TestSchemaWithType.type() == expected
+    assert SchemaTest.TestSchemaWithType.__alchemy_schema__() == expected
   end
 end
