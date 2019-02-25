@@ -1,4 +1,6 @@
 defmodule AlchemyTable.Table do
+  alias AlchemyTable.BigQuery
+
   defmacro __using__(_opt) do
     quote do
       alias AlchemyTable.Operations.Update
@@ -7,6 +9,20 @@ defmodule AlchemyTable.Table do
       Module.register_attribute(__MODULE__, :families, accumulate: true)
       Module.register_attribute(__MODULE__, :promoted, accumulate: true)
       Module.register_attribute(__MODULE__, :cloned, accumulate: true)
+
+      @after_compile unquote(__MODULE__)
+    end
+  end
+
+  def __after_compile__(env, _) do
+    should_gen =
+      Application.get_env(:alchemy_table, :bigquery, [])
+      |> Keyword.get(:gen_schemas, false)
+
+    if should_gen do
+      env.module
+      |> apply(:__alchemy_metadata__, [])
+      |> BigQuery.generate_schema()
     end
   end
 
@@ -18,7 +34,7 @@ defmodule AlchemyTable.Table do
       unquote(block)
       defstruct @families
 
-      def metadata do
+      def __alchemy_metadata__ do
         %{
           name: unquote(name),
           instance: unquote(instance),
@@ -34,7 +50,9 @@ defmodule AlchemyTable.Table do
       end
 
       def build_updates(data, timestamp) do
-        %{cloned: cloned, promoted: promoted, instance: instance, schema: schema} = metadata()
+        %{cloned: cloned, promoted: promoted, instance: instance, schema: schema} =
+          __alchemy_metadata__()
+
         cloned = cloned |> List.flatten()
 
         main_key =
@@ -47,7 +65,7 @@ defmodule AlchemyTable.Table do
 
         cloned_updates =
           for table <- List.flatten(cloned), into: [] do
-            meta = table.metadata()
+            meta = table.__alchemy_metadata__()
             %{name: table_name, instance: instance, opts: opts} = meta
             update = clone_update(main_key, main_update, data, opts, timestamp)
             {instance, table_name, update}

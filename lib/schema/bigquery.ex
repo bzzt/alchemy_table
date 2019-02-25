@@ -1,42 +1,24 @@
-defmodule Mix.Tasks.BigQuery.Schemas do
-  use Mix.Task
-  @schema_dir Path.join([File.cwd!(), "/schema-defs"])
-  def run(_) do
-    File.mkdir(@schema_dir)
-
-    Path.wildcard(Path.join([Mix.Project.build_path(), "**/ebin/**/*.beam"]))
-    |> Enum.map(&get_module_exports/1)
-    |> Enum.filter(&implements_schema?/1)
-    |> Enum.map(&elem(&1, 0))
-    |> Enum.map(&get_metadata/1)
-    |> Enum.map(&build_definition/1)
-    |> Enum.each(&write_def/1)
+defmodule AlchemyTable.BigQuery do
+  def generate_schema(metadata) do
+    metadata
+    |> build_definition()
+    |> write_def()
   end
 
   defp write_def({metadata, def_header, def_body}) do
+    def_path = Path.join([File.cwd!(), "schema-defs/#{Mix.env()}"])
     definition = to_json(def_header, def_body)
 
-    "#{@schema_dir}/#{metadata.name}.json"
-    |> File.write!(definition)
+    File.mkdir(def_path)
+
+    "#{def_path}/#{metadata.name}.json"
+    |> File.write!(definition, [:write])
   end
 
   defp to_json(header, body) do
     Map.merge(header, body)
     |> Poison.encode!(pretty: true)
   end
-
-  defp get_module_exports(path) do
-    {:ok, {mod, exports}} = :beam_lib.chunks('#{path}', [:exports])
-    {mod, exports}
-  end
-
-  defp implements_schema?({_mod, exports}) do
-    exports
-    |> Keyword.get(:exports)
-    |> Keyword.has_key?(:__alchemy_schema__)
-  end
-
-  defp get_metadata(module), do: apply(module, :metadata, [])
 
   defp build_definition(metadata) do
     header = def_header(metadata)
