@@ -6,12 +6,14 @@ defmodule AlchemyTable.BigQuery do
   end
 
   defp write_def({metadata, def_header, def_body}) do
-    def_path = Path.join([File.cwd!(), "schema-defs/#{Mix.env()}"])
+    def_path = Path.join([File.cwd!(), "schema-defs"])
+    env_path = Path.join([def_path, to_string(Mix.env())])
     definition = to_json(def_header, def_body)
 
     File.mkdir(def_path)
+    File.mkdir(env_path)
 
-    "#{def_path}/#{metadata.name}.json"
+    "#{env_path}/#{metadata.name}.json"
     |> File.write!(definition, [:write])
   end
 
