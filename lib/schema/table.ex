@@ -38,7 +38,7 @@ defmodule AlchemyTable.Table do
         %{
           name: unquote(name),
           instance: unquote(instance),
-          cloned: @cloned,
+          cloned: @cloned |> List.flatten(),
           promoted: @promoted,
           opts: unquote(opts),
           schema: __alchemy_schema__()
@@ -52,8 +52,6 @@ defmodule AlchemyTable.Table do
       def build_updates(data, timestamp) do
         %{cloned: cloned, promoted: promoted, instance: instance, schema: schema} =
           __alchemy_metadata__()
-
-        cloned = cloned |> List.flatten()
 
         main_key =
           build_row_key(@key_parts, data)
@@ -132,7 +130,7 @@ defmodule AlchemyTable.Table do
       var!(name) = unquote(name)
       var!(columns) = []
       unquote(block)
-      @families {unquote(name), Map.new(var!(columns))}
+      @families {var!(name), Map.new(var!(columns))}
     end
   end
 
