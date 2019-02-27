@@ -1,4 +1,4 @@
-defmodule TypedMutationsTest do
+defmodule MutationsTest do
   alias AlchemyTable.Mutations
 
   use ExUnit.Case

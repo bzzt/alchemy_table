@@ -1,6 +1,8 @@
 defmodule AlchemyTable.Encoding do
   @mode Application.get_env(:alchemy_table, :value_mode, :bytes)
-  def encode(type, v, mode \\ @mode) do
+  def encode(type, v, opts \\ [mode: @mode]) do
+    mode = Keyword.fetch!(opts, :mode)
+
     if is_nil(v) do
       nil
     else
