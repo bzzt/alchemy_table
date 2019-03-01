@@ -1,6 +1,4 @@
 defmodule AlchemyTable.Table.Utils do
-  alias Bigtable.MutateRow
-
   def atoms_from_dots(string) do
     string
     |> String.replace(~r/[\[\]]/, "")

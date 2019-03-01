@@ -1,23 +1,7 @@
 defmodule AlchemyTable.Operations.Update do
   @moduledoc false
-  alias AlchemyTable.{Mutations, Table, Validation}
+  alias AlchemyTable.{Mutations, Table}
   alias Bigtable.MutateRow
-
-  # @spec mutations_from_maps(map(), [map()], binary(), [binary()]) ::
-  #         Google.Bigtable.V2.MutateRows.Entry.t()
-  # def mutations_from_maps(type_spec, maps, row_prefix, update_patterns) do
-  #   Enum.each(maps, &Validation.validate_map!(type_spec, &1))
-
-  #   mutations = Enum.map(maps, &mutations_from_map(type_spec, &1, row_prefix, update_patterns))
-
-  #   mutations
-  #   |> List.flatten()
-  #   |> MutateRows.build()
-  # end
-  # def update(row_key, type_spec, map) do
-  #   Validation.validate_map!(type_spec, map)
-  #   Mutations.create_mutations(row_key, type_spec, map)
-  # end
 
   def update(module, data, timestamp) do
     build_updates(module, data, timestamp)
@@ -25,49 +9,45 @@ defmodule AlchemyTable.Operations.Update do
   end
 
   defp build_updates(module, data, timestamp) do
-    %{
-      cloned: cloned,
-      promoted: promoted,
-      instance: instance,
-      schema: schema,
-      key_parts: key_parts,
-      opts: opts,
-      table_name: table_name
-    } = module.__alchemy_metadata__()
+    meta = module.__alchemy_metadata__()
 
-    main_key =
-      Table.Utils.build_row_key(key_parts, data)
-      |> add_ts(opts, timestamp)
-
-    main_update =
-      main_key
-      |> build_update(schema, data)
-
-    cloned_updates =
-      for table <- List.flatten(cloned), into: [] do
-        meta = table.__alchemy_metadata__()
-        %{name: table_name, instance: instance, opts: opts} = meta
-        update = clone_update(main_key, main_update, data, opts, timestamp)
-        {instance, table_name, update}
-      end
-
-    promoted_updates =
-      for {column, module} <- promoted,
-          get_in(data, column) != nil,
-          into: [] do
-        build_updates(module, data, timestamp)
-      end
-
-    [{instance, table_name, main_update}, cloned_updates, promoted_updates]
-    |> List.flatten()
+    with row_key <- build_row_key(meta, data, timestamp),
+         mutations <- main_mutations(meta, row_key, data),
+         cloned_mutations <- cloned_mutations(meta, row_key, mutations, data, timestamp),
+         promoted_mutations <- promoted_mutations(meta, data, timestamp) do
+      [{meta.instance, meta.table_name, mutations}, cloned_mutations, promoted_mutations]
+      |> List.flatten()
+    end
   end
 
-  defp build_update(row_key, schema, data) do
-    Validation.validate_map!(schema, data)
-    Mutations.create_mutations(row_key, schema, data)
+  defp build_row_key(%{key_parts: key_parts, opts: opts}, data, timestamp) do
+    Table.Utils.build_row_key(key_parts, data)
+    |> add_ts(opts, timestamp)
   end
 
-  defp clone_update(main_key, main_update, data, opts, timestamp) do
+  defp main_mutations(%{schema: schema}, main_key, data) do
+    main_key
+    |> Mutations.create_mutations(schema, data)
+  end
+
+  defp promoted_mutations(%{promoted: promoted}, data, timestamp) do
+    for {column, module} <- promoted,
+        get_in(data, column) != nil,
+        into: [] do
+      build_updates(module, data, timestamp)
+    end
+  end
+
+  defp cloned_mutations(%{cloned: cloned}, main_key, main_update, data, timestamp) do
+    for table <- List.flatten(cloned), into: [] do
+      meta = table.__alchemy_metadata__()
+      %{name: table_name, instance: instance, opts: opts} = meta
+      mutations = clone_mutations(main_key, main_update, data, opts, timestamp)
+      {instance, table_name, mutations}
+    end
+  end
+
+  defp clone_mutations(main_key, main_update, data, opts, timestamp) do
     key =
       case Table.Utils.get_key_pattern(opts) do
         nil ->

@@ -1,11 +1,13 @@
 defmodule AlchemyTable.Mutations do
   alias AlchemyTable.Encoding
+  alias AlchemyTable.Validation
 
-  def create_mutations(row_key, type_spec, map) do
+  def create_mutations(row_key, schema, data) do
+    Validation.validate_map!(schema, data)
     entry = Bigtable.Mutations.build(row_key)
 
-    Enum.reduce(map, entry, fn {k, v}, accum ->
-      case Map.get(type_spec, k) do
+    Enum.reduce(data, entry, fn {k, v}, accum ->
+      case Map.get(schema, k) do
         nil ->
           accum
 
