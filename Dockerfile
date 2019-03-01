@@ -1,4 +1,5 @@
 FROM elixir:alpine
+ENV BIGTABLE_EMULATOR_HOST="bigtable-emulator:9035"
 ENV MIX_ENV=test
 WORKDIR /app 
 RUN apk update && apk add --no-cache bash && apk add --no-cache curl

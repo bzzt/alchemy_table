@@ -1,6 +1,6 @@
 version: "3"
 services:
-  alchemy-emulator:
+  bigtable-emulator:
     image: jscott22/bigtable-emulator
     command:
       [
@@ -18,4 +18,4 @@ services:
     volumes:
       - ./cover:/app/cover
     depends_on:
-      - alchemy-emulator
+      - bigtable-emulator

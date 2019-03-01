@@ -1,10 +1,14 @@
 use Mix.Config
 
-config :bigtable,
-  project: "project",
-  instance: "instance"
-
 config :alchemy_table,
-  bigquery: [
-    gen_schemas: true
-  ]
+  value_mode: :string
+
+config :bigtable,
+  project: "dev",
+  instance: "dev",
+  table: "test",
+  endpoint: "localhost:9035",
+  ssl: false
+
+config :goth,
+  disabled: true
