@@ -29,7 +29,9 @@ defmodule AlchemyTable.Table do
     instance = Bigtable.Utils.configured_instance_name()
 
     quote do
-      alias AlchemyTable.Operations.Update
+      alias AlchemyTable.Operations.{Get, Update}
+      alias AlchemyTable.Table
+      alias Bigtable.ReadRows
       @key_parts unquote(opts) |> get_key_pattern!() |> build_key_parts()
       unquote(block)
       defstruct @families
@@ -43,7 +45,8 @@ defmodule AlchemyTable.Table do
           promoted: @promoted,
           opts: unquote(opts),
           table_name: unquote(name),
-          schema: __alchemy_schema__()
+          schema: __alchemy_schema__(),
+          full_name: Table.Utils.full_name(unquote(instance), unquote(name))
         }
       end
 
@@ -53,6 +56,10 @@ defmodule AlchemyTable.Table do
 
       def update(data, timestamp \\ DateTime.utc_now()) do
         Update.update(__MODULE__, data, timestamp)
+      end
+
+      def get(request \\ ReadRows.build()) do
+        Get.get(__alchemy_metadata__(), request)
       end
     end
   end

@@ -1,8 +1,21 @@
 version: "3"
 services:
+  alchemy-emulator:
+    image: jscott22/bigtable-emulator
+    command:
+      [
+        "-cf",
+        "dev.standard-table.family,dev.ts-table.family,dev.single-value-promoted.family_a,dev.nested-value-promoted.family_b,dev.with-promoted.family_a,dev.with-promoted.family_b",
+      ]
+    ports:
+      - "9035:9035"
+    expose:
+      - "9035"
   alchemy-test:
     build:
       dockerfile: Dockerfile
       context: .
     volumes:
       - ./cover:/app/cover
+    depends_on:
+      - alchemy-emulator

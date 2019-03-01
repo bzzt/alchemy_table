@@ -5,7 +5,10 @@ config :alchemy_table,
 
 config :bigtable,
   project: "dev",
-  instance: "dev"
+  instance: "dev",
+  table: "test",
+  endpoint: "localhost:9035",
+  ssl: false
 
 config :goth,
   disabled: true

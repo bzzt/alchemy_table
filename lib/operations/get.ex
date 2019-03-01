@@ -1,19 +1,27 @@
-# defmodule AlchemyTable.Operations.Get do
-#   @moduledoc false
+defmodule AlchemyTable.Operations.Get do
+  @moduledoc false
 
-#   alias Bigtable.{ReadRows, RowFilter, RowSet}
+  alias AlchemyTable.{Parsing, Table}
+  alias Bigtable.ReadRows
 
-# def all() do
-#   ReadRows.build()
-#   |> RowFilter.row_key_regex(regex)
-#   |> ReadRows.read()
-# end
+  alias Google.Bigtable.V2.ReadRowsRequest
 
-#   @spec get_by_id([binary()], binary()) :: [{:ok, Google.Bigtable.V2.ReadRowsResponse.t()}]
-#   def get_by_id(ids, row_prefix) do
-#     ids
-#     |> Enum.map(fn id -> "#{row_prefix}##{id}" end)
-#     |> RowSet.row_keys()
-#     |> ReadRows.read()
-#   end
-# end
+  def get(meta, %ReadRowsRequest{} = request) do
+    full_name = Table.Utils.full_name(meta.instance, meta.table_name)
+
+    %{request | table_name: full_name}
+    |> read_and_parse(meta.schema)
+  end
+
+  defp read_and_parse(request, schema) do
+    {:ok, rows} =
+      request
+      |> ReadRows.read()
+
+    result =
+      rows
+      |> Parsing.parse_rows(schema)
+
+    {:ok, result}
+  end
+end

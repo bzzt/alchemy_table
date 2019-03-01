@@ -39,4 +39,10 @@ defmodule AlchemyTable.Table.Utils do
   def get_key_pattern(opts) do
     Keyword.get(opts, :row_key)
   end
+
+  def full_name(instance, table_name) do
+    table_name = to_string(table_name) |> Recase.to_kebab()
+
+    "#{instance}/tables/#{table_name}"
+  end
 end

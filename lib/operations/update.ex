@@ -75,10 +75,10 @@ defmodule AlchemyTable.Operations.Update do
     key <> ts_suffix
   end
 
-  def build_mutate_row({instance, table, mutations}) do
-    table_name = to_string(table) |> Recase.to_kebab()
+  defp build_mutate_row({instance, table_name, mutations}) do
+    full_name = Table.Utils.full_name(instance, table_name)
 
     mutations
-    |> MutateRow.build("#{instance}/tables/#{table_name}")
+    |> MutateRow.build(full_name)
   end
 end
