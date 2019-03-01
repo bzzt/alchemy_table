@@ -1,6 +1,4 @@
 defmodule AlchemyTable.Validation do
-  @moduledoc false
-  @spec validate_map!(map(), map()) :: :ok
   def validate_map!(type_spec, map) do
     Enum.each(map, fn {k, v} ->
       if Map.get(type_spec, k) != nil do
@@ -21,7 +19,6 @@ defmodule AlchemyTable.Validation do
     end)
   end
 
-  @spec validate!(nil | atom(), any(), map()) :: :ok
   defp validate!(nil, _, _), do: :ok
 
   defp validate!(type, value, parent) do
@@ -35,12 +32,9 @@ defmodule AlchemyTable.Validation do
     :ok
   end
 
-  @spec typed_map?(map(), map()) :: true
   defp typed_map?(type, value) when is_map(type) and is_map(value), do: true
-  @spec typed_map?(atom(), any()) :: false
   defp typed_map?(_, _), do: false
 
-  @spec valid?(atom(), any()) :: boolean()
   def valid?(_, nil), do: true
   def valid?(:boolean, v), do: is_boolean(v)
   def valid?(:string, v), do: is_binary(v)

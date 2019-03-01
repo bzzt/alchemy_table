@@ -1,8 +1,6 @@
 defmodule AlchemyTable.Mutations do
-  @moduledoc false
-
   alias AlchemyTable.Encoding
-  @spec create_mutations(binary(), map(), map()) :: Google.Bigtable.V2.MutateRowsRequest.Entry.t()
+
   def create_mutations(row_key, type_spec, map) do
     entry = Bigtable.Mutations.build(row_key)
 
@@ -17,12 +15,6 @@ defmodule AlchemyTable.Mutations do
     end)
   end
 
-  @spec apply_mutations(
-          map(),
-          Google.Bigtable.V2.MutateRowsRequest.Entry.t(),
-          binary(),
-          binary() | nil
-        ) :: Google.Bigtable.V2.MutateRowsRequest.Entry.t()
   defp apply_mutations(type_spec, map, entry, family_name, parent_key \\ nil) do
     Enum.reduce(map, entry, fn {k, v}, accum ->
       column_qualifier = column_qualifier(parent_key, k)
@@ -72,7 +64,6 @@ defmodule AlchemyTable.Mutations do
     end)
   end
 
-  @spec column_qualifier(binary() | nil, binary()) :: binary()
   defp column_qualifier(parent_key, key) do
     case parent_key do
       nil -> to_string(key)

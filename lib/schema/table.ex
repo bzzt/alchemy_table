@@ -3,7 +3,6 @@ defmodule AlchemyTable.Table do
 
   defmacro __using__(_opt) do
     quote do
-      alias AlchemyTable.Operations.Update
       import unquote(__MODULE__)
       import AlchemyTable.Table.Utils
       Module.register_attribute(__MODULE__, :families, accumulate: true)
@@ -30,6 +29,7 @@ defmodule AlchemyTable.Table do
     instance = Bigtable.Utils.configured_instance_name()
 
     quote do
+      alias AlchemyTable.Operations.Update
       @key_parts unquote(opts) |> get_key_pattern!() |> build_key_parts()
       unquote(block)
       defstruct @families
@@ -39,8 +39,10 @@ defmodule AlchemyTable.Table do
           name: unquote(name),
           instance: unquote(instance),
           cloned: @cloned |> List.flatten(),
+          key_parts: @key_parts,
           promoted: @promoted,
           opts: unquote(opts),
+          table_name: unquote(name),
           schema: __alchemy_schema__()
         }
       end
@@ -49,40 +51,8 @@ defmodule AlchemyTable.Table do
         %__MODULE__{}
       end
 
-      def build_updates(data, timestamp) do
-        %{cloned: cloned, promoted: promoted, instance: instance, schema: schema} =
-          __alchemy_metadata__()
-
-        main_key =
-          build_row_key(@key_parts, data)
-          |> add_ts(unquote(opts), timestamp)
-
-        main_update =
-          main_key
-          |> AlchemyTable.Operations.Update.update(schema, data)
-
-        cloned_updates =
-          for table <- List.flatten(cloned), into: [] do
-            meta = table.__alchemy_metadata__()
-            %{name: table_name, instance: instance, opts: opts} = meta
-            update = clone_update(main_key, main_update, data, opts, timestamp)
-            {instance, table_name, update}
-          end
-
-        promoted_updates =
-          for {column, module} <- promoted,
-              get_in(data, column) != nil,
-              into: [] do
-            apply(module, :build_updates, [data, timestamp])
-          end
-
-        [{instance, unquote(name), main_update}, cloned_updates, promoted_updates]
-        |> List.flatten()
-      end
-
       def update(data, timestamp \\ DateTime.utc_now()) do
-        build_updates(data, timestamp)
-        |> Enum.map(&build_mutate_row/1)
+        Update.update(__MODULE__, data, timestamp)
       end
     end
   end

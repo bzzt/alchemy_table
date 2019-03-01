@@ -34,46 +34,11 @@ defmodule AlchemyTable.Table.Utils do
     |> Enum.join("#")
   end
 
-  def add_ts(key, opts, timestamp) do
-    ts_suffix =
-      if Keyword.get(opts, :ts, false) do
-        "##{timestamp}"
-      else
-        ""
-      end
-
-    key <> ts_suffix
-  end
-
   def get_key_pattern!(opts) do
     Keyword.fetch!(opts, :row_key)
   end
 
   def get_key_pattern(opts) do
     Keyword.get(opts, :row_key)
-  end
-
-  def clone_update(main_key, main_update, data, opts, timestamp) do
-    key =
-      case get_key_pattern(opts) do
-        nil ->
-          main_key
-
-        key ->
-          key
-          |> build_key_parts()
-          |> build_row_key(data)
-      end
-
-    key = key |> add_ts(opts, timestamp)
-
-    %{main_update | row_key: key}
-  end
-
-  def build_mutate_row({instance, table, mutations}) do
-    table_name = to_string(table) |> Recase.to_kebab()
-
-    mutations
-    |> MutateRow.build("#{instance}/tables/#{table_name}")
   end
 end

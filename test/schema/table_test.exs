@@ -27,7 +27,9 @@ defmodule TableTest do
             }
           }
         },
-        promoted: []
+        promoted: [],
+        key_parts: ["TABLE", [:family, :id]],
+        table_name: :standard_table
       }
 
       assert StandardTable.__alchemy_metadata__() == expected
@@ -52,7 +54,9 @@ defmodule TableTest do
             }
           }
         },
-        promoted: []
+        promoted: [],
+        key_parts: ["TABLE", [:family, :id]],
+        table_name: :ts_table
       }
 
       assert TSTable.__alchemy_metadata__() == expected
@@ -77,7 +81,9 @@ defmodule TableTest do
             }
           }
         },
-        promoted: []
+        promoted: [],
+        key_parts: ["CLONED", [:family, :id]],
+        table_name: :cloned_table
       }
 
       assert ClonedTable.__alchemy_metadata__() == expected
@@ -107,7 +113,9 @@ defmodule TableTest do
         promoted: [
           {[:family_b, :nested], NestedValuePromoted},
           {[:family_a, :single], SingleValuePromoted}
-        ]
+        ],
+        key_parts: ["TABLE", [:family_a, :id]],
+        table_name: :with_promoted
       }
 
       assert WithPromoted.__alchemy_metadata__() == expected
