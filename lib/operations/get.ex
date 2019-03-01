@@ -4,13 +4,21 @@ defmodule AlchemyTable.Operations.Get do
   alias AlchemyTable.{Parsing, Table}
   alias Bigtable.ReadRows
 
-  alias Google.Bigtable.V2.ReadRowsRequest
+  alias Google.Bigtable.V2.RowFilter
 
-  def get(meta, %ReadRowsRequest{} = request) do
+  def get(meta, opts) do
     full_name = Table.Utils.full_name(meta.instance, meta.table_name)
 
-    %{request | table_name: full_name}
+    full_name
+    |> ReadRows.build()
+    |> apply_filter(Keyword.get(opts, :filter))
     |> read_and_parse(meta.schema)
+  end
+
+  defp apply_filter(request, nil), do: request
+
+  defp apply_filter(request, %RowFilter{} = filter) do
+    %{request | filter: filter}
   end
 
   defp read_and_parse(request, schema) do

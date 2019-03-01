@@ -1,7 +1,7 @@
 defmodule TableIntegrationTest do
   alias AlchemyTable.Operations.{Get, Update}
   alias AlchemyTable.Table
-  alias Bigtable.{Mutations, MutateRow}
+  alias Bigtable.{Mutations, MutateRow, ReadRows, RowFilter}
   use ExUnit.Case
 
   describe "Table" do
@@ -50,7 +50,7 @@ defmodule TableIntegrationTest do
       assert rows == expected
     end
 
-    test "should write multiple rows", context do
+    test "should write and read multiple rows", context do
       assert TSTable.get() == {:ok, %{}}
 
       data = [
@@ -94,6 +94,53 @@ defmodule TableIntegrationTest do
       end
 
       {:ok, rows} = TSTable.get()
+
+      assert rows == expected
+    end
+
+    test "should allow filters to be used", context do
+      assert TSTable.get() == {:ok, %{}}
+
+      data = [
+        %{
+          family: %{
+            a: 1,
+            id: "1",
+            nested: %{
+              c: 2,
+              nested: %{
+                a: "value",
+                b: true
+              }
+            }
+          }
+        },
+        %{
+          family: %{
+            a: 1,
+            id: "2",
+            nested: %{
+              c: 2,
+              nested: %{
+                a: "value",
+                b: true
+              }
+            }
+          }
+        }
+      ]
+
+      expected = %{
+        "TABLE#2##{context.timestamp}" => Enum.at(data, 1)
+      }
+
+      for d <- data do
+        d
+        |> TSTable.update(context.timestamp)
+        |> Enum.map(&MutateRow.mutate/1)
+      end
+
+      {:ok, rows} = TSTable.get(filter: RowFilter.row_key_regex("^TABLE#2#[a-zA-Z-]{0,}"))
 
       assert rows == expected
     end

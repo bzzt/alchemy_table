@@ -58,8 +58,8 @@ defmodule AlchemyTable.Table do
         Update.update(__MODULE__, data, timestamp)
       end
 
-      def get(request \\ ReadRows.build()) do
-        Get.get(__alchemy_metadata__(), request)
+      def get(opts \\ []) do
+        Get.get(__alchemy_metadata__(), opts)
       end
     end
   end
