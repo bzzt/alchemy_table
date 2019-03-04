@@ -32,6 +32,7 @@ defmodule AlchemyTable.Table do
       alias AlchemyTable.Operations.{Get, Update}
       alias AlchemyTable.Table
       alias Bigtable.ReadRows
+      alias Google.Bigtable.V2.{ReadRowsRequest, RowFilter}
       @key_parts unquote(opts) |> get_key_pattern!() |> build_key_parts()
       unquote(block)
       defstruct @families
@@ -58,8 +59,18 @@ defmodule AlchemyTable.Table do
         Update.update(__MODULE__, data, timestamp)
       end
 
-      def get(opts \\ []) do
-        Get.get(__alchemy_metadata__(), opts)
+      def get(request \\ ReadRows.build())
+
+      def get(%RowFilter{} = filter) do
+        request =
+          ReadRows.build()
+          |> Map.put(:filter, filter)
+
+        Get.get(__alchemy_metadata__(), request)
+      end
+
+      def get(%ReadRowsRequest{} = request) do
+        Get.get(__alchemy_metadata__(), request)
       end
     end
   end

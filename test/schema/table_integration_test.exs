@@ -1,7 +1,5 @@
 defmodule TableIntegrationTest do
-  alias AlchemyTable.Operations.{Get, Update}
-  alias AlchemyTable.Table
-  alias Bigtable.{Mutations, MutateRow, ReadRows, RowFilter}
+  alias Bigtable.{Mutations, MutateRow, RowFilter}
   use ExUnit.Case
 
   describe "Table" do
@@ -140,7 +138,7 @@ defmodule TableIntegrationTest do
         |> Enum.map(&MutateRow.mutate/1)
       end
 
-      {:ok, rows} = TSTable.get(filter: RowFilter.row_key_regex("^TABLE#2#[a-zA-Z-]{0,}"))
+      {:ok, rows} = RowFilter.row_key_regex("^TABLE#2#[a-zA-Z-]{0,}") |> TSTable.get()
 
       assert rows == expected
     end
