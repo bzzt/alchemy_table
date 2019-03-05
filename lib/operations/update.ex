@@ -4,7 +4,9 @@ defmodule AlchemyTable.Operations.Update do
   alias Bigtable.{MutateRow, RowSet}
 
   def update(module, data, opts) do
-    build_updates(module, data, opts)
+    updates = build_updates(module, data, opts)
+
+    updates
     |> Enum.map(&send_update(&1, opts))
     |> Map.new()
   end
@@ -24,7 +26,9 @@ defmodule AlchemyTable.Operations.Update do
   end
 
   defp build_row_key(%{key_parts: key_parts, opts: opts}, data, timestamp) do
-    Table.Utils.build_row_key(key_parts, data)
+    row_key = Table.Utils.build_row_key(key_parts, data)
+
+    row_key
     |> add_ts(opts, timestamp)
   end
 
@@ -98,7 +102,9 @@ defmodule AlchemyTable.Operations.Update do
 
   defp build_response(module, row_key, opts) do
     if Keyword.get(opts, :return, false) do
-      RowSet.row_keys(row_key)
+      row_key = RowSet.row_keys(row_key)
+
+      row_key
       |> module.get()
     else
       :ok

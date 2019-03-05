@@ -1,4 +1,7 @@
 defmodule AlchemyTable.BigQuery do
+  @moduledoc """
+  Provides BigQuery schema definition file generation for AlchemyTable defined tables
+  """
   def generate_schema(metadata) do
     metadata
     |> build_definition()
@@ -18,7 +21,9 @@ defmodule AlchemyTable.BigQuery do
   end
 
   defp to_json(header, body) do
-    Map.merge(header, body)
+    schema_def = Map.merge(header, body)
+
+    schema_def
     |> Poison.encode!(pretty: true)
   end
 
@@ -48,7 +53,9 @@ defmodule AlchemyTable.BigQuery do
   end
 
   defp translate_columns(columns, parent_key \\ []) do
-    map_from_struct(columns)
+    map = map_from_struct(columns)
+
+    map
     |> Enum.map(&translate_column(&1, parent_key))
     |> List.flatten()
   end
@@ -65,7 +72,9 @@ defmodule AlchemyTable.BigQuery do
       type: translate_type(type)
     }
 
-    if !Enum.empty?(parent_key) do
+    if Enum.empty?(parent_key) do
+      column_def
+    else
       [h | t] = qualifier
 
       field_name =
@@ -73,14 +82,13 @@ defmodule AlchemyTable.BigQuery do
         |> Enum.join()
 
       Map.put(column_def, :fieldName, field_name)
-    else
-      column_def
     end
   end
 
   defp def_header(%{instance: instance, name: name}) do
     table_name =
-      to_string(name)
+      name
+      |> to_string()
       |> Recase.KebabCase.convert()
 
     %{
