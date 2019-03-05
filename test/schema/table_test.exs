@@ -2,7 +2,6 @@ Code.require_file("../support/test_schema.ex", __DIR__)
 
 defmodule TableTest do
   alias AlchemyTable.Table
-  alias Google.Bigtable.V2.MutateRowRequest
   use ExUnit.Case
 
   doctest Table

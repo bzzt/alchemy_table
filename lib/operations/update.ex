@@ -1,11 +1,12 @@
 defmodule AlchemyTable.Operations.Update do
   @moduledoc false
   alias AlchemyTable.{Mutations, Table}
-  alias Bigtable.MutateRow
+  alias Bigtable.{MutateRow, RowSet}
 
   def update(module, data, opts) do
     build_updates(module, data, opts)
-    |> Enum.map(&mutate_row(&1, opts))
+    |> Enum.map(&send_update(&1, opts))
+    |> Map.new()
   end
 
   defp build_updates(module, data, opts) do
@@ -17,7 +18,7 @@ defmodule AlchemyTable.Operations.Update do
          mutations <- main_mutations(meta, row_key, data),
          cloned_mutations <- cloned_mutations(meta, row_key, mutations, data, timestamp),
          promoted_mutations <- promoted_mutations(meta, data, opts) do
-      [{meta.instance, meta.table_name, mutations}, cloned_mutations, promoted_mutations]
+      [{module, mutations}, cloned_mutations, promoted_mutations]
       |> List.flatten()
     end
   end
@@ -41,11 +42,10 @@ defmodule AlchemyTable.Operations.Update do
   end
 
   defp cloned_mutations(%{cloned: cloned}, main_key, main_update, data, timestamp) do
-    for table <- List.flatten(cloned), into: [] do
-      meta = table.__alchemy_metadata__()
-      %{name: table_name, instance: instance, opts: opts} = meta
-      mutations = clone_mutations(main_key, main_update, data, opts, timestamp)
-      {instance, table_name, mutations}
+    for module <- List.flatten(cloned), into: [] do
+      meta = module.__alchemy_metadata__()
+      mutations = clone_mutations(main_key, main_update, data, meta.opts, timestamp)
+      {module, mutations}
     end
   end
 
@@ -77,11 +77,31 @@ defmodule AlchemyTable.Operations.Update do
     key <> ts_suffix
   end
 
-  defp mutate_row({instance, table_name, mutations} = data, opts) do
+  defp send_update({module, mutations}, opts) do
+    %{instance: instance, table_name: table_name} = module.__alchemy_metadata__()
     full_name = Table.Utils.full_name(instance, table_name)
 
+    with {:ok, _} <- mutate_row(mutations, full_name) do
+      response = build_response(module, mutations.row_key, opts)
+      {table_name, response}
+    else
+      err ->
+        {table_name, err}
+    end
+  end
+
+  defp mutate_row(mutations, table_name) do
     mutations
-    |> MutateRow.build(full_name)
+    |> MutateRow.build(table_name)
     |> MutateRow.mutate()
+  end
+
+  defp build_response(module, row_key, opts) do
+    if Keyword.get(opts, :return, false) do
+      RowSet.row_keys(row_key)
+      |> module.get()
+    else
+      :ok
+    end
   end
 end

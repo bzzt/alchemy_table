@@ -55,7 +55,8 @@ defmodule AlchemyTable.Table do
         %__MODULE__{}
       end
 
-      def update(data, opts \\ [timestamp: DateTime.utc_now()]) do
+      def update(data, opts \\ []) do
+        opts = Keyword.put_new(opts, :timestamp, DateTime.utc_now())
         Update.update(__MODULE__, data, opts)
       end
 

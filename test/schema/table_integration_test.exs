@@ -59,7 +59,7 @@ defmodule TableIntegrationTest do
       {:ok, cloned_rows} = ClonedTable.get()
 
       assert rows == %{row_key => data}
-      assert cloned_rows = %{"CLONED#id-1" => data}
+      assert cloned_rows == %{"CLONED#id-1" => data}
     end
 
     test "should write and read multiple rows", context do
@@ -93,6 +93,19 @@ defmodule TableIntegrationTest do
       {:ok, rows} = RowFilter.row_key_regex("^#{row_key}") |> StandardTable.get()
 
       assert rows == %{row_key => data}
+    end
+
+    test "should return the created row", context do
+      row_key = "TABLE#id-1"
+
+      data = context.data[row_key]
+
+      response =
+        data
+        |> StandardTable.update(return: true)
+
+      assert response.standard_table == {:ok, %{row_key => data}}
+      assert response.cloned_table == {:ok, %{"CLONED#id-1" => data}}
     end
   end
 
