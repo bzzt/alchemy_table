@@ -5,7 +5,7 @@ services:
     command:
       [
         "-cf",
-        "dev.standard-table.family,dev.ts-table.family,dev.single-value-promoted.family_a,dev.nested-value-promoted.family_b,dev.with-promoted.family_a,dev.with-promoted.family_b",
+        "dev.standard-table.family,dev.cloned-table.family,dev.ts-table.family,dev.single-value-promoted.family_a,dev.nested-value-promoted.family_b,dev.with-promoted.family_a,dev.with-promoted.family_b",
       ]
     ports:
       - "9035:9035"

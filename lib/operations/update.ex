@@ -3,18 +3,20 @@ defmodule AlchemyTable.Operations.Update do
   alias AlchemyTable.{Mutations, Table}
   alias Bigtable.MutateRow
 
-  def update(module, data, timestamp) do
-    build_updates(module, data, timestamp)
-    |> Enum.map(&build_mutate_row/1)
+  def update(module, data, opts) do
+    build_updates(module, data, opts)
+    |> Enum.map(&mutate_row(&1, opts))
   end
 
-  defp build_updates(module, data, timestamp) do
+  defp build_updates(module, data, opts) do
     meta = module.__alchemy_metadata__()
+
+    timestamp = Keyword.fetch!(opts, :timestamp)
 
     with row_key <- build_row_key(meta, data, timestamp),
          mutations <- main_mutations(meta, row_key, data),
          cloned_mutations <- cloned_mutations(meta, row_key, mutations, data, timestamp),
-         promoted_mutations <- promoted_mutations(meta, data, timestamp) do
+         promoted_mutations <- promoted_mutations(meta, data, opts) do
       [{meta.instance, meta.table_name, mutations}, cloned_mutations, promoted_mutations]
       |> List.flatten()
     end
@@ -30,11 +32,11 @@ defmodule AlchemyTable.Operations.Update do
     |> Mutations.create_mutations(schema, data)
   end
 
-  defp promoted_mutations(%{promoted: promoted}, data, timestamp) do
+  defp promoted_mutations(%{promoted: promoted}, data, opts) do
     for {column, module} <- promoted,
         get_in(data, column) != nil,
         into: [] do
-      build_updates(module, data, timestamp)
+      build_updates(module, data, opts)
     end
   end
 
@@ -75,10 +77,11 @@ defmodule AlchemyTable.Operations.Update do
     key <> ts_suffix
   end
 
-  defp build_mutate_row({instance, table_name, mutations}) do
+  defp mutate_row({instance, table_name, mutations} = data, opts) do
     full_name = Table.Utils.full_name(instance, table_name)
 
     mutations
     |> MutateRow.build(full_name)
+    |> MutateRow.mutate()
   end
 end

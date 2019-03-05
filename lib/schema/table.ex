@@ -55,8 +55,8 @@ defmodule AlchemyTable.Table do
         %__MODULE__{}
       end
 
-      def update(data, timestamp \\ DateTime.utc_now()) do
-        Update.update(__MODULE__, data, timestamp)
+      def update(data, opts \\ [timestamp: DateTime.utc_now()]) do
+        Update.update(__MODULE__, data, opts)
       end
 
       def get(request \\ ReadRows.build())
