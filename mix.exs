@@ -59,7 +59,7 @@ defmodule AlchemyTable.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:bigtable, "~> 0.6.0"},
+      {:bigtable, "~> 0.6.1"},
       {:recase, "~> 0.4"},
       {:credo, "~> 1.0.0", only: [:dev, :test, :ci], runtime: false},
       {:excoveralls, "~> 0.10", only: [:dev, :test, :ci]},
