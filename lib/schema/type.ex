@@ -1,10 +1,17 @@
 defmodule AlchemyTable.Type do
+  @moduledoc """
+  Defines a type for use in schemas.
+  """
+
   defmacro __using__(_opts) do
     quote do
       import unquote(__MODULE__)
     end
   end
 
+  @doc """
+  Defines a type struct with a given name.
+  """
   defmacro type(do: block) do
     quote do
       var!(fields) = []
@@ -18,6 +25,9 @@ defmodule AlchemyTable.Type do
     end
   end
 
+  @doc """
+  Defines a field on the type with a given name and type declaration.
+  """
   defmacro field(key, {:__aliases__, _, _} = value) do
     type =
       value

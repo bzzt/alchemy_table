@@ -1,4 +1,5 @@
 defmodule AlchemyTable.Table.Utils do
+  @moduledoc false
   def atoms_from_dots(string) do
     string
     |> String.replace(~r/[\[\]]/, "")

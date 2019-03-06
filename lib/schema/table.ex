@@ -1,4 +1,7 @@
 defmodule AlchemyTable.Table do
+  @moduledoc """
+  Defines a table schema.
+  """
   alias AlchemyTable.BigQuery
 
   defmacro __using__(_opt) do
@@ -25,6 +28,14 @@ defmodule AlchemyTable.Table do
     end
   end
 
+  @doc """
+  Defines a table with a name and column definitions.
+
+  ## Options
+
+  * `:row_key` - the row key generation pattern to create row keys from data.
+  * `:ts` - boolean denoting the table is a time series table. Defaults to `false`.
+  """
   defmacro table(name, opts, do: block) do
     instance = Bigtable.Utils.configured_instance_name()
 
@@ -76,6 +87,9 @@ defmodule AlchemyTable.Table do
     end
   end
 
+  @doc """
+  Clones the column definitions from the provided table schema.
+  """
   defmacro clone(module) do
     families =
       module
@@ -92,6 +106,9 @@ defmodule AlchemyTable.Table do
     end
   end
 
+  @doc """
+  Denotes the column corresponds to a promoted table. The type will be inferred from the provided table.
+  """
   defmacro promoted(key, value) do
     module = Macro.expand(value, __CALLER__)
 
@@ -109,11 +126,7 @@ defmodule AlchemyTable.Table do
   end
 
   @doc """
-  Defines a column family inside a `Bigtable.Schema.row/2` definition.
-
-  The name of the family should be provided to the macro as an atom.
-
-  The block of the macro should only contain `Bigtable.Schema.column/2` definitions.
+  Defines a column family inside a table schema.
   """
   defmacro family(name, do: block) do
     quote do
@@ -136,6 +149,8 @@ defmodule AlchemyTable.Table do
   - `:string`
   - `:map`
   - `:list`
+
+  A `AlchemyTable.Type` module can also be provided as the column's type.
 
   If the column value is defined as either `:map` or `:list`, the value will be JSON encoded during mutations and decoded during reads.
   """
