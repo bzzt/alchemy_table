@@ -41,7 +41,7 @@ defmodule AlchemyTable.Table.Utils do
   end
 
   def full_name(instance, table_name) do
-    table_name = to_string(table_name) |> Recase.to_kebab()
+    table_name = table_name |> to_string() |> Recase.to_kebab()
 
     "#{instance}/tables/#{table_name}"
   end

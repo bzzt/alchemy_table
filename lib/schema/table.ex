@@ -78,7 +78,8 @@ defmodule AlchemyTable.Table do
 
   defmacro clone(module) do
     families =
-      Macro.expand(module, __CALLER__)
+      module
+      |> Macro.expand(__CALLER__)
       |> apply(:__alchemy_schema__, [])
       |> Map.from_struct()
       |> Map.to_list()
@@ -140,7 +141,8 @@ defmodule AlchemyTable.Table do
   """
   defmacro column(key, {:__aliases__, _, _} = value) do
     type =
-      Macro.expand(value, __CALLER__)
+      value
+      |> Macro.expand(__CALLER__)
       |> apply(:type, [])
       |> Macro.escape()
 

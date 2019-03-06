@@ -1,4 +1,5 @@
 defmodule FlatType do
+  @moduledoc false
   use AlchemyTable.Type
 
   type do
@@ -8,6 +9,7 @@ defmodule FlatType do
 end
 
 defmodule NestedType do
+  @moduledoc false
   use AlchemyTable.Type
 
   type do
@@ -17,6 +19,7 @@ defmodule NestedType do
 end
 
 defmodule StandardTable do
+  @moduledoc false
   use AlchemyTable.Table
 
   @cloned [
@@ -33,6 +36,7 @@ defmodule StandardTable do
 end
 
 defmodule TSTable do
+  @moduledoc false
   use AlchemyTable.Table
 
   table :ts_table, row_key: "TABLE#[family.id]", ts: true do
@@ -45,6 +49,7 @@ defmodule TSTable do
 end
 
 defmodule ClonedTable do
+  @moduledoc false
   use AlchemyTable.Table
 
   table :cloned_table, row_key: "CLONED#[family.id]" do
@@ -53,6 +58,7 @@ defmodule ClonedTable do
 end
 
 defmodule SingleValuePromoted do
+  @moduledoc false
   use AlchemyTable.Table
 
   table :single_value_promoted, row_key: "TABLE#[family_a.id]" do
@@ -63,6 +69,7 @@ defmodule SingleValuePromoted do
 end
 
 defmodule NestedValuePromoted do
+  @moduledoc false
   use AlchemyTable.Table
 
   table :nested_value_promoted, row_key: "TABLE#[family_a.id]" do
@@ -73,6 +80,7 @@ defmodule NestedValuePromoted do
 end
 
 defmodule WithPromoted do
+  @moduledoc false
   use AlchemyTable.Table
 
   table :with_promoted, row_key: "TABLE#[family_a.id]" do

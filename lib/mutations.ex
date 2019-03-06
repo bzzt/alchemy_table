@@ -14,13 +14,14 @@ defmodule AlchemyTable.Mutations do
     Validation.validate_map!(schema, data)
     entry = Bigtable.Mutations.build(row_key)
 
-    Enum.reduce(data, entry, fn {k, v}, accum ->
-      case Map.get(schema, k) do
+    Enum.reduce(data, entry, fn {family_name, family_spec}, accum ->
+      case Map.get(schema, family_name) do
+        # Ignore values that don't exist in the schema. Will make this behavior an option eventually.
         nil ->
           accum
 
         type ->
-          apply_mutations(type, v, accum, to_string(k))
+          apply_mutations(type, family_spec, accum, to_string(family_name))
       end
     end)
   end
@@ -74,7 +75,7 @@ defmodule AlchemyTable.Mutations do
     end
   end
 
-  @typedoc "Map where all values are either `nil` or a `nil_map`"
+  @typedoc false
   @type nil_map() :: %{required(atom()) => nil | nil_map()}
 
   # Returns a map of nil values

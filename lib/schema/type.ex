@@ -20,7 +20,8 @@ defmodule AlchemyTable.Type do
 
   defmacro field(key, {:__aliases__, _, _} = value) do
     type =
-      Macro.expand(value, __CALLER__)
+      value
+      |> Macro.expand(__CALLER__)
       |> apply(:type, [])
       |> Macro.escape()
 

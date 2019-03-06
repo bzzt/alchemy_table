@@ -1,5 +1,5 @@
 defmodule TableIntegrationTest do
-  alias Bigtable.{Mutations, MutateRow, RowFilter}
+  alias Bigtable.{MutateRow, Mutations, RowFilter}
   use ExUnit.Case
 
   describe "Table.update/2 - Standard with cloned" do
@@ -90,7 +90,10 @@ defmodule TableIntegrationTest do
         |> StandardTable.update()
       end
 
-      {:ok, rows} = RowFilter.row_key_regex("^#{row_key}") |> StandardTable.get()
+      {:ok, rows} =
+        "^#{row_key}"
+        |> RowFilter.row_key_regex()
+        |> StandardTable.get()
 
       assert rows == %{row_key => data}
     end
@@ -206,7 +209,8 @@ defmodule TableIntegrationTest do
     %{full_name: table_name} = table.__alchemy_metadata__()
 
     {:ok, _} =
-      Mutations.build(row_key)
+      row_key
+      |> Mutations.build()
       |> Mutations.delete_from_row()
       |> MutateRow.build(table_name)
       |> MutateRow.mutate()
