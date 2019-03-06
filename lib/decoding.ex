@@ -1,6 +1,30 @@
 defmodule AlchemyTable.Decoding do
+  @moduledoc """
+  Provides the ability to decode the value of a cell chunk returned by a `Google.Bigtable.V2.ReadRowsResponse` 
+  """
+
   @mode Application.get_env(:alchemy_table, :value_mode, :bytes)
 
+  @doc """
+  Decods a value given a `type`, `value`, and optional options.
+
+  ## Examples
+      iex> AlchemyTable.Decoding.decode(:boolean, <<1>>, [mode: :bytes])
+      true
+
+  The provided type can be one of:
+  * `:boolean`
+  * `:integer`
+  * `:float`
+  * `:list`
+  * `:map`
+  * `:string`
+
+  ## Options
+  * `:mode` - The type of encoding to perform. Can be either `:string` or `:bytes`. Defaults to application configured value or `:bytes`.
+  * `:keys` - The type of keys when decoding maps. Can be either `:atoms` or `:strings`. Defaults to `:atoms`.
+  """
+  @spec decode(atom(), binary(), list()) :: any()
   def decode(type, v, opts \\ [mode: @mode]) do
     mode = Keyword.fetch!(opts, :mode)
     opts = Keyword.put_new(opts, :keys, :atoms)
@@ -15,12 +39,16 @@ defmodule AlchemyTable.Decoding do
   end
 
   defp decode_string(:integer, v, _opts) do
-    Integer.parse(v)
+    parsed = Integer.parse(v)
+
+    parsed
     |> elem(0)
   end
 
   defp decode_string(:float, v, _opts) do
-    Float.parse(v)
+    parsed = Float.parse(v)
+
+    parsed
     |> elem(0)
   end
 

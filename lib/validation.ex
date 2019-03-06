@@ -1,8 +1,18 @@
 defmodule AlchemyTable.Validation do
-  def validate_map!(type_spec, map) do
+  @moduledoc """
+  Provides functionality to validate maps based on a provided schema.
+  """
+
+  @doc """
+  Validates a `map` against a provided `schema`, erroring out if `map` does not conform.
+
+  Keys that exist in the map but not in the schema will be ignored.
+  """
+  @spec validate_map!(map(), map()) :: :ok
+  def validate_map!(schema, map) do
     Enum.each(map, fn {k, v} ->
-      if Map.get(type_spec, k) != nil do
-        type = Map.get(type_spec, k)
+      if Map.get(schema, k) != nil do
+        type = Map.get(schema, k)
 
         case typed_map?(type, v) do
           true ->

@@ -1,6 +1,16 @@
 defmodule AlchemyTable.Parsing do
+  @moduledoc """
+  Provides functionality for parsing the result of a `Bigtable.ChunkReader`.
+  """
   alias AlchemyTable.Decoding
 
+  @typedoc "Map keyed by row keys with parsed rows as values."
+  @type parsed_rows() :: %{optional(binary()) => map()}
+
+  @doc """
+  Parses the result of a `Bigtable.ChunkReader` based on a provided `schema`.
+  """
+  @spec parse_rows(map(), map()) :: parsed_rows()
   def parse_rows(rows, schema) do
     spec = Map.from_struct(schema)
 

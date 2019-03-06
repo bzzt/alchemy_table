@@ -1,17 +1,41 @@
 defmodule AlchemyTable.Encoding do
+  @moduledoc """
+  Provides the ability to encode a value to a binary for use in a `Google.Bigtable.V2.Mutation` 
+  """
+
   @mode Application.get_env(:alchemy_table, :value_mode, :bytes)
-  def encode(type, v, opts \\ [mode: @mode]) do
+
+  @doc """
+  Encodes a `value` given a `type`, the `value`, and an optional list of options.
+
+  ## Examples
+      iex> AlchemyTable.Encoding.encode(:boolean, true, [mode: :bytes])
+      <<1>>
+
+  The provided type can be one of:
+  * `:boolean`
+  * `:integer`
+  * `:float`
+  * `:list`
+  * `:map`
+  * `:string`
+
+  ## Options
+  * `:mode` - The type of encoding to perform. Can be either `:string` or `:bytes`. Defaults to application configured value or `:bytes`.
+  """
+  @spec encode(atom(), any(), list()) :: binary() | nil
+  def encode(type, value, opts \\ [mode: @mode]) do
     mode = Keyword.fetch!(opts, :mode)
 
-    if is_nil(v) do
+    if is_nil(value) do
       nil
     else
       case mode do
         :string ->
-          encode_string(type, v)
+          encode_string(type, value)
 
         :bytes ->
-          encode_bytes(type, v)
+          encode_bytes(type, value)
       end
     end
   end
