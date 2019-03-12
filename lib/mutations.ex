@@ -2,8 +2,7 @@ defmodule AlchemyTable.Mutations do
   @moduledoc """
   Provides functionality for generating mutations for data based on a provided schema.
   """
-  alias AlchemyTable.Encoding
-  alias AlchemyTable.Validation
+  alias AlchemyTable.{Encoding, Validation, Utils}
   alias Google.Bigtable.V2.MutateRowsRequest.Entry
 
   @doc """
@@ -68,26 +67,11 @@ defmodule AlchemyTable.Mutations do
   @spec nested_map(map(), binary() | nil, Entry.t(), binary(), binary()) :: Entry.t()
   defp nested_map(type, value, accum, family_name, column_qualifier) do
     if value == nil or value == "" do
-      niled_map = nil_values(type)
+      niled_map = Utils.nil_map(type)
       apply_mutations(type, niled_map, accum, family_name, column_qualifier)
     else
       apply_mutations(type, value, accum, family_name, column_qualifier)
     end
-  end
-
-  @typedoc false
-  @type nil_map() :: %{required(atom()) => nil | nil_map()}
-
-  # Returns a map of nil values
-  @spec nil_values(map()) :: nil_map()
-  defp nil_values(schema) do
-    Enum.reduce(schema, %{}, fn {k, v}, accum ->
-      if is_map(v) do
-        Map.put(accum, k, nil_values(v))
-      else
-        Map.put(accum, k, nil)
-      end
-    end)
   end
 
   # Builds up a dot notation column qualifier if the current column has a parent key

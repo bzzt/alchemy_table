@@ -1,8 +1,8 @@
 defmodule AlchemyTable.Table.Utils do
   @moduledoc false
+
   def atoms_from_dots(string) do
     string
-    |> String.replace(~r/[\[\]]/, "")
     |> String.split(".")
     |> Enum.map(&String.to_atom/1)
   end
@@ -13,7 +13,9 @@ defmodule AlchemyTable.Table.Utils do
     |> Enum.map(fn string ->
       case Regex.run(~r/\[(.*)\]/, string) do
         [h | _] ->
-          atoms_from_dots(h)
+          h
+          |> remove_brackets()
+          |> atoms_from_dots()
 
         nil ->
           string
@@ -45,5 +47,10 @@ defmodule AlchemyTable.Table.Utils do
     table_name = table_name |> to_string() |> Recase.to_kebab()
 
     "#{instance}/tables/#{table_name}"
+  end
+
+  defp remove_brackets(string) do
+    string
+    |> String.replace(~r/[\[\]]/, "")
   end
 end

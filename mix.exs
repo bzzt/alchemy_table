@@ -61,6 +61,7 @@ defmodule AlchemyTable.MixProject do
     [
       {:bigtable, "~> 0.6.1"},
       {:recase, "~> 0.4"},
+      {:deep_merge, "~> 0.1.1"},
       {:credo, "~> 1.0.0", only: [:dev, :test, :ci], runtime: false},
       {:excoveralls, "~> 0.10", only: [:dev, :test, :ci]},
       {:ex_doc, "~> 0.19", only: :dev, runtime: false},

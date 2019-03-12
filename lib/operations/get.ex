@@ -13,18 +13,18 @@ defmodule AlchemyTable.Operations.Get do
   Submits a `Google.Bigtable.V2.ReadRowsRequest` and parses the response based on a table's schema.
   """
   @spec get(map(), ReadRowsRequest.t()) :: get_response()
-  def get(meta, request) do
-    full_name = Table.Utils.full_name(meta.instance, meta.table_name)
+  def get(metadata, request) do
+    full_name = Table.Utils.full_name(metadata.instance, metadata.table_name)
 
     request
     |> Map.put(:table_name, full_name)
-    |> read_and_parse(meta.schema)
+    |> read_and_parse(metadata)
   end
 
   @spec read_and_parse(ReadRowsRequest.t(), map()) :: get_response()
-  defp(read_and_parse(request, schema)) do
+  defp(read_and_parse(request, metadata)) do
     with {:ok, rows} <- ReadRows.read(request),
-         result <- Parsing.parse_rows(rows, schema) do
+         result <- Parsing.parse_rows(rows, metadata) do
       {:ok, result}
     else
       err ->

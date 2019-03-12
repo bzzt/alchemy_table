@@ -41,29 +41,34 @@ defmodule AlchemyTable.Table do
 
     quote do
       alias AlchemyTable.Operations.{Get, Update}
-      alias AlchemyTable.Table
+      alias AlchemyTable.{Table, Utils}
       alias Bigtable.ReadRows
       alias Google.Bigtable.V2.{ReadRowsRequest, RowFilter}
       @key_parts unquote(opts) |> get_key_pattern!() |> build_key_parts()
+
       unquote(block)
-      defstruct @families
+
+      @schema defstruct @families
+
+      @metadata %{
+        name: unquote(name),
+        instance: unquote(instance),
+        cloned: @cloned |> List.flatten(),
+        key_parts: @key_parts,
+        promoted: @promoted,
+        opts: unquote(opts),
+        table_name: unquote(name),
+        schema: @schema,
+        merge_map: @schema |> Map.from_struct() |> Utils.nil_map(),
+        full_name: Table.Utils.full_name(unquote(instance), unquote(name))
+      }
 
       def __alchemy_metadata__ do
-        %{
-          name: unquote(name),
-          instance: unquote(instance),
-          cloned: @cloned |> List.flatten(),
-          key_parts: @key_parts,
-          promoted: @promoted,
-          opts: unquote(opts),
-          table_name: unquote(name),
-          schema: __alchemy_schema__(),
-          full_name: Table.Utils.full_name(unquote(instance), unquote(name))
-        }
+        @metadata
       end
 
       def __alchemy_schema__ do
-        %__MODULE__{}
+        @schema
       end
 
       def update(data, opts \\ []) do

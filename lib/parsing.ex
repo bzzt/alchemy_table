@@ -3,6 +3,7 @@ defmodule AlchemyTable.Parsing do
   Provides functionality for parsing the result of a `Bigtable.ChunkReader`.
   """
   alias AlchemyTable.Decoding
+  alias AlchemyTable.Table.Utils
 
   @typedoc "Map keyed by row keys with parsed rows as values."
   @type parsed_rows() :: %{optional(binary()) => map()}
@@ -11,14 +12,16 @@ defmodule AlchemyTable.Parsing do
   Parses the result of a `Bigtable.ChunkReader` based on a provided `schema`.
   """
   @spec parse_rows(map(), map()) :: parsed_rows()
-  def parse_rows(rows, schema) do
-    spec = Map.from_struct(schema)
+  def parse_rows(rows, metadata) do
+    spec = Map.from_struct(metadata.schema)
 
     rows
-    |> Map.new(&parse_row(spec, &1))
+    |> Map.new(&parse_row(metadata, &1))
   end
 
-  defp parse_row(spec, {row_key, chunks}) do
+  defp parse_row(metadata, {row_key, chunks}) do
+    schema = metadata.schema |> Map.from_struct()
+
     parsed =
       chunks
       |> Enum.reduce(%{}, fn chunk, accum ->
@@ -26,17 +29,18 @@ defmodule AlchemyTable.Parsing do
 
         qualifiers =
           chunk.qualifier.value
-          |> String.split(".")
-          |> Enum.map(&String.to_atom/1)
+          |> Utils.atoms_from_dots()
 
         access_pattern = [family | qualifiers]
         access_func = Enum.map(access_pattern, &Access.key(&1, %{}))
 
-        type = Enum.reduce(access_pattern, spec, &Map.get(&2, &1))
+        type = Enum.reduce(access_pattern, schema, &Map.get(&2, &1))
 
         put_in(accum, access_func, Decoding.decode(type, chunk.value))
       end)
 
-    {row_key, parsed}
+    merged = DeepMerge.deep_merge(metadata.merge_map, parsed)
+
+    {row_key, merged}
   end
 end
