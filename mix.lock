@@ -1,5 +1,5 @@
 %{
-  "bigtable": {:hex, :bigtable, "0.6.1", "8c229a6dd9cf99511c79d334c0a29a2e7f2414792e4b2c9d0a0b715e3fd7bcd4", [:mix], [{:google_protos, "~> 0.1", [hex: :google_protos, repo: "hexpm", optional: false]}, {:goth, "~> 0.11.0", [hex: :goth, repo: "hexpm", optional: false]}, {:grpc, "~> 0.3.1", [hex: :grpc, repo: "hexpm", optional: false]}, {:lens, "~> 0.8.0", [hex: :lens, repo: "hexpm", optional: false]}, {:poison, "~> 3.1", [hex: :poison, repo: "hexpm", optional: false]}, {:protobuf, "~> 0.5.3", [hex: :protobuf, repo: "hexpm", optional: false]}], "hexpm"},
+  "bigtable": {:git, "https://github.com/bzzt/bigtable", "8f337452abb776392186e880745d8f8482504c08", [branch: "develop"]},
   "bunt": {:hex, :bunt, "0.2.0", "951c6e801e8b1d2cbe58ebbd3e616a869061ddadcc4863d0a2182541acae9a38", [:mix], [], "hexpm"},
   "certifi": {:hex, :certifi, "2.5.1", "867ce347f7c7d78563450a18a6a28a8090331e77fa02380b4a21962a65d36ee5", [:rebar3], [{:parse_trans, "~>3.3", [hex: :parse_trans, repo: "hexpm", optional: false]}], "hexpm"},
   "cowboy": {:hex, :cowboy, "2.5.0", "4ef3ae066ee10fe01ea3272edc8f024347a0d3eb95f6fbb9aed556dacbfc1337", [:rebar3], [{:cowlib, "~> 2.6.0", [hex: :cowlib, repo: "hexpm", optional: false]}, {:ranch, "~> 1.6.2", [hex: :ranch, repo: "hexpm", optional: false]}], "hexpm"},
