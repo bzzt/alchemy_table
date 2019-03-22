@@ -5,6 +5,11 @@ defmodule MutationsTest do
 
   describe "Typed.Mutations.create_mutations" do
     setup do
+      timestamp = "2019-01-01T00:00:00Z"
+      {:ok, datetime, _} = DateTime.from_iso8601(timestamp)
+
+      unix = DateTime.to_unix(datetime)
+
       [
         row_key: "Test#1",
         type_spec: %{
@@ -19,7 +24,9 @@ defmodule MutationsTest do
               }
             }
           }
-        }
+        },
+        timestamp: timestamp,
+        unix: unix
       ]
     end
 
@@ -38,9 +45,10 @@ defmodule MutationsTest do
         }
       }
 
-      expected = expected_entry("true", "2")
+      expected = expected_entry("true", "2", context.unix)
 
-      result = Mutations.create_mutations(context.row_key, context.type_spec, map)
+      result =
+        Mutations.create_mutations(context.row_key, context.type_spec, map, context.timestamp)
 
       assert result == expected
     end
@@ -62,7 +70,7 @@ defmodule MutationsTest do
                %Google.Bigtable.V2.Mutation.SetCell{
                  column_qualifier: "test_column",
                  family_name: "test_family",
-                 timestamp_micros: -1,
+                 timestamp_micros: context.unix,
                  value: "false"
                }}
           },
@@ -117,13 +125,14 @@ defmodule MutationsTest do
         ]
       }
 
-      result = Mutations.create_mutations(context.row_key, context.type_spec, map)
+      result =
+        Mutations.create_mutations(context.row_key, context.type_spec, map, context.timestamp)
 
       assert result == expected
     end
   end
 
-  defp expected_entry(a_value, b_value) do
+  defp expected_entry(a_value, b_value, unix) do
     %Google.Bigtable.V2.MutateRowsRequest.Entry{
       mutations: [
         %Google.Bigtable.V2.Mutation{
@@ -132,7 +141,7 @@ defmodule MutationsTest do
              %Google.Bigtable.V2.Mutation.SetCell{
                column_qualifier: "test_column",
                family_name: "test_family",
-               timestamp_micros: -1,
+               timestamp_micros: unix,
                value: "false"
              }}
         },
@@ -142,7 +151,7 @@ defmodule MutationsTest do
              %Google.Bigtable.V2.Mutation.SetCell{
                column_qualifier: "test_nested.double_nested.double_nested_a",
                family_name: "test_family",
-               timestamp_micros: -1,
+               timestamp_micros: unix,
                value: a_value
              }}
         },
@@ -152,7 +161,7 @@ defmodule MutationsTest do
              %Google.Bigtable.V2.Mutation.SetCell{
                column_qualifier: "test_nested.double_nested.double_nested_b",
                family_name: "test_family",
-               timestamp_micros: -1,
+               timestamp_micros: unix,
                value: b_value
              }}
         },
@@ -162,7 +171,7 @@ defmodule MutationsTest do
              %Google.Bigtable.V2.Mutation.SetCell{
                column_qualifier: "test_nested.nested_a",
                family_name: "test_family",
-               timestamp_micros: -1,
+               timestamp_micros: unix,
                value: a_value
              }}
         },
@@ -172,7 +181,7 @@ defmodule MutationsTest do
              %Google.Bigtable.V2.Mutation.SetCell{
                column_qualifier: "test_nested.nested_b",
                family_name: "test_family",
-               timestamp_micros: -1,
+               timestamp_micros: unix,
                value: b_value
              }}
         }

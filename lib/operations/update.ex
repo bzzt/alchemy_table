@@ -3,6 +3,9 @@ defmodule AlchemyTable.Operations.Update do
   alias AlchemyTable.{Mutations, Table}
   alias Bigtable.{MutateRow, RowSet}
 
+  def update(module, data, opts) when is_list(data) do
+  end
+
   def update(module, data, opts) do
     updates = build_updates(module, data, opts)
 
@@ -17,7 +20,7 @@ defmodule AlchemyTable.Operations.Update do
     timestamp = Keyword.fetch!(opts, :timestamp)
 
     with row_key <- build_row_key(meta, data, timestamp),
-         mutations <- main_mutations(meta, row_key, data),
+         mutations <- main_mutations(meta, row_key, data, timestamp),
          cloned_mutations <- cloned_mutations(meta, row_key, mutations, data, timestamp),
          promoted_mutations <- promoted_mutations(meta, data, opts) do
       [{module, mutations}, cloned_mutations, promoted_mutations]
@@ -32,9 +35,9 @@ defmodule AlchemyTable.Operations.Update do
     |> add_ts(opts, timestamp)
   end
 
-  defp main_mutations(%{schema: schema}, main_key, data) do
+  defp main_mutations(%{schema: schema}, main_key, data, timestamp) do
     main_key
-    |> Mutations.create_mutations(schema, data)
+    |> Mutations.create_mutations(schema, data, timestamp)
   end
 
   defp promoted_mutations(%{promoted: promoted}, data, opts) do
