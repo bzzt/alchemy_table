@@ -51,23 +51,31 @@ defmodule AlchemyTable.Mutations do
 
   # Adds a mutation to the entry. Will either set the cell value or delete the cell
   # Depending on if the value is nil or not
-  @spec add_cell_mutation(Entry.t(), binary(), binary(), nil | binary(), binary()) :: Entry.t()
+  @spec add_cell_mutation(Entry.t(), binary(), binary(), nil | binary(), binary() | DateTime.t()) ::
+          Entry.t()
   defp add_cell_mutation(accum, family_name, column_qualifier, nil, _) do
     accum
     |> Bigtable.Mutations.delete_from_column(family_name, column_qualifier)
   end
 
   defp add_cell_mutation(accum, family_name, column_qualifier, value, timestamp) do
-    {:ok, datetime, _} =
-      timestamp
-      |> DateTime.from_iso8601()
+    datetime =
+      if is_binary(timestamp) do
+        {:ok, datetime, _} =
+          timestamp
+          |> DateTime.from_iso8601()
+
+        datetime
+      else
+        timestamp
+      end
 
     unix_timestamp =
       datetime
-      |> DateTime.to_unix()
+      |> DateTime.to_unix(:milliseconds)
 
     accum
-    |> Bigtable.Mutations.set_cell(family_name, column_qualifier, value, unix_timestamp)
+    |> Bigtable.Mutations.set_cell(family_name, column_qualifier, value, unix_timestamp * 1000)
   end
 
   # If a value is a nested map, recursively apply mutations with either the map value

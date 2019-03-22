@@ -1,3 +1,5 @@
+Code.require_file("../support/test_schema.ex", __DIR__)
+
 defmodule TableIntegrationTest do
   alias Bigtable.{MutateRow, Mutations, RowFilter}
   use ExUnit.Case
@@ -62,6 +64,7 @@ defmodule TableIntegrationTest do
       assert cloned_rows == %{"CLONED#id-1" => data}
     end
 
+    @tag :wip
     test "should write and read multiple rows", context do
       for {_, data} <- context.data do
         data
@@ -114,7 +117,7 @@ defmodule TableIntegrationTest do
 
   describe "Table.update/2 - TS Table" do
     setup do
-      timestamp = "current-ts"
+      timestamp = "2019-01-01T00:00:00Z"
       row_key = "TABLE#id-1##{timestamp}"
 
       data = %{
