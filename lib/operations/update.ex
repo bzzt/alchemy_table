@@ -18,7 +18,7 @@ defmodule AlchemyTable.Operations.Update do
     |> Map.new()
   end
 
-  defp build_updates(module, data, opts) do
+  def build_updates(module, data, opts) do
     meta = module.__alchemy_metadata__()
 
     timestamp = Keyword.fetch!(opts, :timestamp)
