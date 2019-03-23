@@ -1,9 +1,13 @@
 defmodule AlchemyTable.Operations.Update do
   @moduledoc false
   alias AlchemyTable.{Mutations, Table}
-  alias Bigtable.{MutateRow, RowSet}
+  alias Bigtable.{MutateRow, MutateRows, RowSet}
 
   def update(module, data, opts) when is_list(data) do
+    data
+    |> Enum.flat_map(&build_updates(module, &1, opts))
+    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+    |> send_updates(opts)
   end
 
   def update(module, data, opts) do
@@ -97,10 +101,25 @@ defmodule AlchemyTable.Operations.Update do
     end
   end
 
+  defp send_updates(updates, opts) do
+    for {module, mutations} <- updates do
+      %{instance: instance, table_name: table_name} = module.__alchemy_metadata__()
+      full_name = Table.Utils.full_name(instance, table_name)
+
+      {table_name, mutate_rows(mutations, full_name)}
+    end
+  end
+
   defp mutate_row(mutations, table_name) do
     mutations
     |> MutateRow.build(table_name)
     |> MutateRow.mutate()
+  end
+
+  defp mutate_rows(mutations, table_name) do
+    mutations
+    |> MutateRows.build(table_name)
+    |> MutateRows.mutate()
   end
 
   defp build_response(module, row_key, opts) do

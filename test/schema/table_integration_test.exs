@@ -64,12 +64,10 @@ defmodule TableIntegrationTest do
       assert cloned_rows == %{"CLONED#id-1" => data}
     end
 
-    @tag :wip
     test "should write and read multiple rows", context do
-      for {_, data} <- context.data do
-        data
-        |> StandardTable.update()
-      end
+      context.data
+      |> Map.values()
+      |> StandardTable.update()
 
       {:ok, rows} = StandardTable.get()
       {:ok, cloned_rows} = ClonedTable.get()
