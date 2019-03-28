@@ -2,7 +2,7 @@ defmodule AlchemyTable.Operations.Get do
   @moduledoc """
   Provides funtionaly for reading rows from a table and parsing the results based on its schema.
   """
-  alias AlchemyTable.{Parsing, Table}
+  alias AlchemyTable.Parsing
   alias Bigtable.ReadRows
   alias Google.Bigtable.V2.ReadRowsRequest
 
@@ -13,9 +13,7 @@ defmodule AlchemyTable.Operations.Get do
   Submits a `Google.Bigtable.V2.ReadRowsRequest` and parses the response based on a table's schema.
   """
   @spec get(map(), ReadRowsRequest.t()) :: get_response()
-  def get(metadata, request) do
-    full_name = Table.Utils.full_name(metadata.instance, metadata.table_name)
-
+  def get(%{full_name: full_name} = metadata, request) do
     request
     |> Map.put(:table_name, full_name)
     |> read_and_parse(metadata)

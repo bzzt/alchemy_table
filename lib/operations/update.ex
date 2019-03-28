@@ -1,5 +1,4 @@
 defmodule AlchemyTable.Operations.Update do
-  @moduledoc false
   alias AlchemyTable.{Mutations, Table}
   alias Bigtable.{MutateRow, MutateRows, RowSet}
 
@@ -89,8 +88,7 @@ defmodule AlchemyTable.Operations.Update do
   end
 
   defp send_update({module, mutations}, opts) do
-    %{instance: instance, table_name: table_name} = module.__alchemy_metadata__()
-    full_name = Table.Utils.full_name(instance, table_name)
+    %{full_name: full_name, table_name: table_name} = module.__alchemy_metadata__()
 
     with {:ok, _} <- mutate_row(mutations, full_name) do
       response = build_response(module, mutations.row_key, opts)
@@ -101,10 +99,9 @@ defmodule AlchemyTable.Operations.Update do
     end
   end
 
-  defp send_updates(updates, opts) do
+  defp send_updates(updates, _opts) do
     for {module, mutations} <- updates do
-      %{instance: instance, table_name: table_name} = module.__alchemy_metadata__()
-      full_name = Table.Utils.full_name(instance, table_name)
+      %{full_name: full_name, table_name: table_name} = module.__alchemy_metadata__()
 
       {table_name, mutate_rows(mutations, full_name)}
     end

@@ -85,16 +85,11 @@ defmodule AlchemyTable.BigQuery do
     end
   end
 
-  defp def_header(%{instance: instance, name: name}) do
-    table_name =
-      name
-      |> to_string()
-      |> Recase.KebabCase.convert()
-
+  defp def_header(%{full_name: full_name}) do
     %{
       sourceFormat: "BIGTABLE",
       sourceUris: [
-        "https://googleapis.com/bigtable/#{instance}/tables/#{table_name}"
+        "https://googleapis.com/bigtable/#{full_name}"
       ],
       nullMarker: "",
       bigtableOptions: %{

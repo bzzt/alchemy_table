@@ -44,7 +44,16 @@ defmodule AlchemyTable.Table.Utils do
   end
 
   def full_name(instance, table_name) do
-    table_name = table_name |> to_string() |> Recase.to_kebab()
+    base_name = table_name |> to_string() |> Recase.to_kebab()
+
+    table_name =
+      case Application.get_env(:alchemy_table, :table_prefix, nil) do
+        nil ->
+          base_name
+
+        prefix ->
+          "#{prefix}-#{base_name}"
+      end
 
     "#{instance}/tables/#{table_name}"
   end
