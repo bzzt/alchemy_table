@@ -13,7 +13,9 @@ defmodule AlchemyTable.Operations.Get do
   Submits a `Google.Bigtable.V2.ReadRowsRequest` and parses the response based on a table's schema.
   """
   @spec get(map(), ReadRowsRequest.t()) :: get_response()
-  def get(%{full_name: full_name} = metadata, request) do
+  def get(%{instance: instance, table_name: table_name} = metadata, request) do
+    full_name = AlchemyTable.Table.Utils.full_name(instance, table_name)
+
     request
     |> Map.put(:table_name, full_name)
     |> read_and_parse(metadata)

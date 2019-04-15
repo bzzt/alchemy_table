@@ -8,7 +8,7 @@ defmodule MutationsTest do
       timestamp = "2019-01-01T00:00:00Z"
       {:ok, datetime, _} = DateTime.from_iso8601(timestamp)
 
-      unix = DateTime.to_unix(datetime, :milliseconds) * 1000
+      unix = DateTime.to_unix(datetime, :millisecond) * 1000
 
       [
         row_key: "Test#1",

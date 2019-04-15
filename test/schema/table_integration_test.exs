@@ -207,13 +207,15 @@ defmodule TableIntegrationTest do
   end
 
   defp drop_row(table, row_key) do
-    %{full_name: table_name} = table.__alchemy_metadata__()
+    %{instance: instance, table_name: table_name} = table.__alchemy_metadata__()
+
+    full_name = AlchemyTable.Table.Utils.full_name(instance, table_name)
 
     {:ok, _} =
       row_key
       |> Mutations.build()
       |> Mutations.delete_from_row()
-      |> MutateRow.build(table_name)
+      |> MutateRow.build(full_name)
       |> MutateRow.mutate()
   end
 end

@@ -72,7 +72,7 @@ defmodule AlchemyTable.Mutations do
 
     unix_timestamp =
       datetime
-      |> DateTime.to_unix(:milliseconds)
+      |> DateTime.to_unix(:millisecond)
 
     accum
     |> Bigtable.Mutations.set_cell(family_name, column_qualifier, value, unix_timestamp * 1000)

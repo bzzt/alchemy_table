@@ -85,7 +85,9 @@ defmodule AlchemyTable.BigQuery do
     end
   end
 
-  defp def_header(%{full_name: full_name}) do
+  defp def_header(%{instance: instance, table_name: table_name}) do
+    full_name = AlchemyTable.Table.Utils.full_name(instance, table_name)
+
     %{
       sourceFormat: "BIGTABLE",
       sourceUris: [
