@@ -94,6 +94,8 @@ defmodule AlchemyTable.Operations.Update do
 
     full_name = Table.Utils.full_name(instance, table_name)
 
+    IO.puts("Sending update to #{full_name}")
+
     with {:ok, _} <- mutate_row(mutations, full_name) do
       response = build_response(module, mutations.row_key, opts)
       {table_name, response}
@@ -110,6 +112,8 @@ defmodule AlchemyTable.Operations.Update do
       %{instance: instance, table_name: table_name} = module.__alchemy_metadata__()
 
       full_name = Table.Utils.full_name(instance, table_name)
+
+      IO.puts("Sending updates to #{full_name}")
 
       {table_name, mutate_rows(mutations, full_name)}
     end
