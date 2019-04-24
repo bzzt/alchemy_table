@@ -4,30 +4,28 @@ defmodule AlchemyTable.Utils do
   @typedoc false
   @type nilled_map() :: %{required(atom()) => nil | nilled_map()}
 
-  @spec nil_map(map()) :: nilled_map()
-  def nil_map(map) do
-    map
-    |> from_struct()
-    |> Enum.reduce(%{}, fn {k, v}, accum ->
-      if is_map(v) do
-        Map.put(accum, k, nil_map(v))
-      else
-        Map.put(accum, k, nil)
-      end
-    end)
+  @spec nilled(any) :: nil | nilled_map()
+  def nilled(val) when is_map(val) do
+    for {k, v} <- from_struct(val), into: %{} do
+      {k, nilled(v)}
+    end
   end
 
+  def nilled(_), do: nil
+
+  @spec atoms_from_dots(binary()) :: [atom()]
+  def atoms_from_dots(string) do
+    string
+    |> String.split(".")
+    |> Enum.map(&String.to_atom/1)
+  end
+
+  @spec from_struct(map()) :: map()
   defp from_struct(map) do
     if Map.has_key?(map, :__struct__) do
       Map.from_struct(map)
     else
       map
     end
-  end
-
-  def atoms_from_dots(string) do
-    string
-    |> String.split(".")
-    |> Enum.map(&String.to_atom/1)
   end
 end

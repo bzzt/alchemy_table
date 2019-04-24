@@ -7,7 +7,7 @@ defmodule AlchemyTable.Operations.Get do
   alias Google.Bigtable.V2.ReadRowsRequest
 
   @typedoc "Returns either parsed rows or a GRPC error"
-  @type get_response() :: {:ok, Parsing.parsed_rows()} | {:error, any()}
+  @type get_response() :: {:ok, map()} | {:error, any()}
 
   @doc """
   Submits a `Google.Bigtable.V2.ReadRowsRequest` and parses the response based on a table's schema.

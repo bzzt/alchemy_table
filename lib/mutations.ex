@@ -83,7 +83,7 @@ defmodule AlchemyTable.Mutations do
   @spec nested_map(map(), binary() | nil, Entry.t(), binary(), binary(), binary()) :: Entry.t()
   defp nested_map(type, value, accum, family_name, column_qualifier, timestamp) do
     if value == nil or value == "" do
-      niled_map = Utils.nil_map(type)
+      niled_map = Utils.nilled(type)
       apply_mutations(type, niled_map, accum, family_name, timestamp, column_qualifier)
     else
       apply_mutations(type, value, accum, family_name, timestamp, column_qualifier)

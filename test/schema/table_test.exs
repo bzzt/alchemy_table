@@ -32,7 +32,7 @@ defmodule TableTest do
         key_parts: ["TABLE", [:family, :id]],
         table_name: :standard_table,
         full_name: Bigtable.Utils.configured_instance_name() <> "/tables/standard-table",
-        merge_map: Utils.nil_map(schema)
+        merge_map: Utils.nilled(schema)
       }
 
       assert StandardTable.__alchemy_metadata__() == expected
@@ -63,7 +63,7 @@ defmodule TableTest do
         key_parts: ["TABLE", [:family, :id]],
         table_name: :ts_table,
         full_name: Bigtable.Utils.configured_instance_name() <> "/tables/ts-table",
-        merge_map: Utils.nil_map(schema)
+        merge_map: Utils.nilled(schema)
       }
 
       assert TSTable.__alchemy_metadata__() == expected
@@ -94,7 +94,7 @@ defmodule TableTest do
         key_parts: ["CLONED", [:family, :id]],
         table_name: :cloned_table,
         full_name: Bigtable.Utils.configured_instance_name() <> "/tables/cloned-table",
-        merge_map: Utils.nil_map(schema)
+        merge_map: Utils.nilled(schema)
       }
 
       assert ClonedTable.__alchemy_metadata__() == expected
@@ -130,7 +130,7 @@ defmodule TableTest do
         key_parts: ["TABLE", [:family_a, :id]],
         table_name: :with_promoted,
         full_name: Bigtable.Utils.configured_instance_name() <> "/tables/with-promoted",
-        merge_map: Utils.nil_map(schema)
+        merge_map: Utils.nilled(schema)
       }
 
       assert WithPromoted.__alchemy_metadata__() == expected
