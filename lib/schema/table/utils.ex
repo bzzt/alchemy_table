@@ -1,11 +1,7 @@
 defmodule AlchemyTable.Table.Utils do
   @moduledoc false
 
-  def atoms_from_dots(string) do
-    string
-    |> String.split(".")
-    |> Enum.map(&String.to_atom/1)
-  end
+  alias AlchemyTable.Utils
 
   def build_key_parts(key_pattern) do
     key_pattern
@@ -15,7 +11,7 @@ defmodule AlchemyTable.Table.Utils do
         [h | _] ->
           h
           |> remove_brackets()
-          |> atoms_from_dots()
+          |> Utils.atoms_from_dots()
 
         nil ->
           string

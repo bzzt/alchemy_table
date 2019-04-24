@@ -24,4 +24,10 @@ defmodule AlchemyTable.Utils do
       map
     end
   end
+
+  def atoms_from_dots(string) do
+    string
+    |> String.split(".")
+    |> Enum.map(&String.to_atom/1)
+  end
 end

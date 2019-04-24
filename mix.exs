@@ -60,9 +60,11 @@ defmodule AlchemyTable.MixProject do
   defp deps do
     [
       {:bigtable, git: "https://github.com/bzzt/bigtable", branch: "develop"},
-      {:recase, "~> 0.4"},
       {:deep_merge, "~> 0.1.1"},
+      {:recase, "~> 0.4"},
+      # Dev deps
       {:credo, "~> 1.0.0", only: [:dev, :test, :ci], runtime: false},
+      {:dialyxir, "~> 1.0.0-rc.6", only: [:dev], runtime: false},
       {:excoveralls, "~> 0.10", only: [:dev, :test, :ci]},
       {:ex_doc, "~> 0.19", only: :dev, runtime: false},
       {:mix_test_watch, "~> 0.8", only: :dev, runtime: false}
