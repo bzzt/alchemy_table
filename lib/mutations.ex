@@ -6,21 +6,23 @@ defmodule AlchemyTable.Mutations do
   alias Google.Bigtable.V2.MutateRowsRequest.Entry
 
   @doc """
-  Creates mutations for `data` based on a provided `schema`. Errors out if the data does not conform to the schema.
+  Creates mutations for `data` based on a provided `schema`.
+
+  Raises if `data` contains values that do not conform to schema. Values present in `data` that are not defined in the `schema` are passed through.
   """
   @spec create_mutations(binary(), map(), map(), binary()) :: Entry.t()
   def create_mutations(row_key, schema, data, timestamp) do
     Validation.validate_update!(schema, data)
     entry = Bigtable.Mutations.build(row_key)
 
-    Enum.reduce(data, entry, fn {family_name, family_spec}, accum ->
+    Enum.reduce(data, entry, fn {family_name, columns}, accum ->
       case Map.get(schema, family_name) do
         # Ignore values that don't exist in the schema. Will make this behavior an option eventually.
         nil ->
           accum
 
         type ->
-          apply_mutations(type, family_spec, accum, to_string(family_name), timestamp)
+          apply_mutations(type, columns, accum, to_string(family_name), timestamp)
       end
     end)
   end
