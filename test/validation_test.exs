@@ -6,7 +6,7 @@ defmodule ValidationTest do
 
   doctest Validation
 
-  describe "Validation.validate_map!" do
+  describe "Validation.validate_update!" do
     setup do
       [
         type_spec: %{
@@ -32,7 +32,7 @@ defmodule ValidationTest do
         }
       }
 
-      assert Validation.validate_map!(context.type_spec, map) == :ok
+      assert Validation.validate_update!(context.type_spec, map) == :ok
     end
 
     test "should raise for invalid primitives", context do
@@ -43,7 +43,7 @@ defmodule ValidationTest do
         }
       }
 
-      assert_raise(RuntimeError, fn -> Validation.validate_map!(context.type_spec, map) end)
+      assert_raise(RuntimeError, fn -> Validation.validate_update!(context.type_spec, map) end)
     end
 
     test "should return :ok for valid typed map value", context do
@@ -55,7 +55,7 @@ defmodule ValidationTest do
         }
       }
 
-      assert Validation.validate_map!(context.type_spec, map) == :ok
+      assert Validation.validate_update!(context.type_spec, map) == :ok
     end
 
     test "should raise for invalid typed map", context do
@@ -67,7 +67,7 @@ defmodule ValidationTest do
         }
       }
 
-      assert_raise(RuntimeError, fn -> Validation.validate_map!(context.type_spec, map) end)
+      assert_raise(RuntimeError, fn -> Validation.validate_update!(context.type_spec, map) end)
     end
 
     test "should return :ok for valid untyped map", context do
@@ -79,7 +79,7 @@ defmodule ValidationTest do
         }
       }
 
-      assert Validation.validate_map!(context.type_spec, map) == :ok
+      assert Validation.validate_update!(context.type_spec, map) == :ok
     end
 
     test "should return :ok with extra untyped fields", context do
@@ -95,7 +95,7 @@ defmodule ValidationTest do
         }
       }
 
-      assert Validation.validate_map!(context.type_spec, map) == :ok
+      assert Validation.validate_update!(context.type_spec, map) == :ok
     end
   end
 

@@ -1,35 +1,28 @@
 defmodule AlchemyTable.Validation do
-  @moduledoc """
-  Provides functionality to validate maps based on a provided schema.
-  """
+  @moduledoc false
 
   @doc """
-  Validates a `map` against a provided `schema`, erroring out if `map` does not conform.
+  Validates an update against a provided `schema`, raising if the update is invalid.
 
   Keys that exist in the map but not in the schema will be ignored.
   """
-  @spec validate_map!(map(), map()) :: :ok
-  def validate_map!(schema, map) do
-    Enum.each(map, fn {k, v} ->
-      if Map.get(schema, k) != nil do
-        type = Map.get(schema, k)
+  def validate_update!(schema, update, parent \\ nil)
 
-        case typed_map?(type, v) do
-          true ->
-            nested_map = Map.get(map, k)
-            validate_map!(type, nested_map)
+  def validate_update!(schema, update, _parent) when is_map(update) and schema != :map do
+    Enum.each(update, fn {k, v} ->
+      case Map.get(schema, k) do
+        nil ->
+          :ok
 
-          false ->
-            type
-            |> validate!(v, map)
-        end
-      else
-        :ok
+        type ->
+          validate_update!(type, v, update)
       end
     end)
   end
 
-  defp validate!(nil, _, _), do: :ok
+  def validate_update!(schema, update, parent) do
+    validate!(schema, update, parent)
+  end
 
   defp validate!(type, value, parent) do
     unless valid?(type, value) do
@@ -38,13 +31,9 @@ defmodule AlchemyTable.Validation do
         "Value #{inspect(value)} does not conform to type #{inspect(type)} in #{inspect(parent)}"
       )
     end
-
-    :ok
   end
 
-  defp typed_map?(type, value) when is_map(type) and is_map(value), do: true
-  defp typed_map?(_, _), do: false
-
+  def valid?(nil, _), do: true
   def valid?(_, nil), do: true
   def valid?(:boolean, v), do: is_boolean(v)
   def valid?(:string, v), do: is_binary(v)

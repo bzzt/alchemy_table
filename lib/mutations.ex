@@ -10,7 +10,7 @@ defmodule AlchemyTable.Mutations do
   """
   @spec create_mutations(binary(), map(), map(), binary()) :: Entry.t()
   def create_mutations(row_key, schema, data, timestamp) do
-    Validation.validate_map!(schema, data)
+    Validation.validate_update!(schema, data)
     entry = Bigtable.Mutations.build(row_key)
 
     Enum.reduce(data, entry, fn {family_name, family_spec}, accum ->
