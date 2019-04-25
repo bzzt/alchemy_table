@@ -3,6 +3,7 @@ defmodule AlchemyTable.Mutations do
   Provides functionality for generating mutations for data based on a provided schema.
   """
   alias AlchemyTable.{Encoding, Validation, Utils}
+  alias Bigtable.Mutations
   alias Google.Bigtable.V2.MutateRowsRequest.Entry
 
   @doc """
@@ -13,91 +14,78 @@ defmodule AlchemyTable.Mutations do
   @spec create_mutations(binary(), map(), map(), binary()) :: Entry.t()
   def create_mutations(row_key, schema, data, timestamp) do
     Validation.validate_update!(schema, data)
-    entry = Bigtable.Mutations.build(row_key)
 
-    Enum.reduce(data, entry, fn {family_name, columns}, accum ->
-      case Map.get(schema, family_name) do
-        # Ignore values that don't exist in the schema. Will make this behavior an option eventually.
-        nil ->
-          accum
-
-        type ->
-          apply_mutations(type, columns, accum, to_string(family_name), timestamp)
-      end
-    end)
+    row_key
+    |> Mutations.build()
+    |> apply_mutations(schema, data, timestamp)
   end
 
   # Applys mutations to the Entry based on the schema.
-  @spec apply_mutations(map(), map(), Entry.t(), binary(), binary(), binary() | nil) :: Entry.t()
-  defp apply_mutations(schema, data, entry, family_name, timestamp, parent_key \\ nil) do
+  defp apply_mutations(entry, schema, data, timestamp, access \\ []) do
     Enum.reduce(data, entry, fn {k, v}, accum ->
-      column_qualifier = column_qualifier(parent_key, k)
+      type = Map.get(schema, k)
 
-      case Map.get(schema, k) do
-        # Ignore values that don't exist in the schema. Will make this behavior an option eventually.
-        nil ->
+      access = [k | access]
+
+      cond do
+        # pass through value if it does not exist in schema
+        is_nil(type) ->
           accum
 
-        # Recursively applies mutations to nested maps
-        type when is_map(type) ->
-          nested_map(type, v, accum, family_name, column_qualifier, timestamp)
+        # if type is a map but value is nil, recurse with a map of nilled values
+        is_map(type) and empty_value?(v) ->
+          niled_map = Utils.nilled(type)
+          apply_mutations(accum, type, niled_map, timestamp, access)
 
-        type ->
-          encoded = Encoding.encode(type, v)
+        # Recurse for typed maps
+        is_map(type) ->
+          apply_mutations(accum, type, v, timestamp, access)
 
-          accum
-          |> add_cell_mutation(family_name, column_qualifier, encoded, timestamp)
+        true ->
+          mutate_cell(accum, type, v, timestamp, Enum.reverse(access))
       end
     end)
   end
 
-  # Adds a mutation to the entry. Will either set the cell value or delete the cell
-  # Depending on if the value is nil or not
-  @spec add_cell_mutation(Entry.t(), binary(), binary(), nil | binary(), binary() | DateTime.t()) ::
-          Entry.t()
-  defp add_cell_mutation(accum, family_name, column_qualifier, nil, _) do
-    accum
-    |> Bigtable.Mutations.delete_from_column(family_name, column_qualifier)
+  def mutate_cell(entry, type, value, timestamp, [family | columns]) do
+    family = to_string(family)
+    qualifier = dot_notation(columns)
+
+    if is_nil(value) do
+      Mutations.delete_from_column(entry, family, qualifier)
+    else
+      encoded = Encoding.encode(type, value)
+      ts = mutation_timestamp(timestamp)
+      Mutations.set_cell(entry, family, qualifier, encoded, ts)
+    end
   end
 
-  defp add_cell_mutation(accum, family_name, column_qualifier, value, timestamp) do
-    datetime =
-      if is_binary(timestamp) do
-        {:ok, datetime, _} =
-          timestamp
-          |> DateTime.from_iso8601()
+  defp dot_notation(columns) do
+    columns
+    |> Enum.map(&to_string/1)
+    |> Enum.join(".")
+  end
 
-        datetime
-      else
-        timestamp
-      end
+  @spec empty_value?(any()) :: boolean()
+  defp empty_value?(v), do: is_nil(v) or v == ""
 
-    unix_timestamp =
+  # Builds a unix timestamp from either a datetime or ISO string
+  @spec mutation_timestamp(DateTime.t() | binary()) :: integer()
+  defp mutation_timestamp(timestamp) when is_binary(timestamp) do
+    {:ok, datetime, _} = DateTime.from_iso8601(timestamp)
+    unix_timestamp(datetime)
+  end
+
+  defp mutation_timestamp(timestamp), do: unix_timestamp(timestamp)
+
+  # unix timestamp needs to be microseconds rounded to nearest millisecond
+  # or bigtable will reject the update
+  @spec unix_timestamp(DateTime.t()) :: integer()
+  defp unix_timestamp(datetime) do
+    ts =
       datetime
       |> DateTime.to_unix(:millisecond)
 
-    accum
-    |> Bigtable.Mutations.set_cell(family_name, column_qualifier, value, unix_timestamp * 1000)
-  end
-
-  # If a value is a nested map, recursively apply mutations with either the map value
-  # or a map of nil values if the value is nil
-  @spec nested_map(map(), binary() | nil, Entry.t(), binary(), binary(), binary()) :: Entry.t()
-  defp nested_map(type, value, accum, family_name, column_qualifier, timestamp) do
-    if value == nil or value == "" do
-      niled_map = Utils.nilled(type)
-      apply_mutations(type, niled_map, accum, family_name, timestamp, column_qualifier)
-    else
-      apply_mutations(type, value, accum, family_name, timestamp, column_qualifier)
-    end
-  end
-
-  # Builds up a dot notation column qualifier if the current column has a parent key
-  @spec column_qualifier(binary() | nil, atom()) :: binary()
-  defp column_qualifier(parent_key, key) do
-    case parent_key do
-      nil -> to_string(key)
-      parent -> "#{parent}.#{to_string(key)}"
-    end
+    ts * 1000
   end
 end
