@@ -2,29 +2,27 @@ defmodule AlchemyTable.Mutations do
   @moduledoc """
   Provides functionality for generating mutations for data based on a provided schema.
   """
-  alias AlchemyTable.{Encoding, Validation, Utils}
+  alias AlchemyTable.{Encoding, Utils, Validation}
   alias Bigtable.Mutations
   alias Google.Bigtable.V2.MutateRowsRequest.Entry
 
   @doc """
   Creates mutations for `data` based on a provided `schema`.
-
   Raises if `data` contains values that do not conform to schema. Values present in `data` that are not defined in the `schema` are passed through.
   """
-  @spec create_mutations(binary(), map(), map(), binary()) :: Entry.t()
+  @spec create_mutations(binary(), map(), map(), any()) :: Entry.t()
   def create_mutations(row_key, schema, data, timestamp) do
     Validation.validate_update!(schema, data)
 
     row_key
     |> Mutations.build()
-    |> apply_mutations(schema, data, timestamp)
+    |> apply_mutations(schema, data, mutation_timestamp(timestamp))
   end
 
-  # Applys mutations to the Entry based on the schema.
+  @spec apply_mutations(Entry.t(), atom() | map(), any(), integer(), [atom()]) :: Entry.t()
   defp apply_mutations(entry, schema, data, timestamp, access \\ []) do
     Enum.reduce(data, entry, fn {k, v}, accum ->
       type = Map.get(schema, k)
-
       access = [k | access]
 
       cond do
@@ -34,8 +32,7 @@ defmodule AlchemyTable.Mutations do
 
         # if type is a map but value is nil, recurse with a map of nilled values
         is_map(type) and empty_value?(v) ->
-          niled_map = Utils.nilled(type)
-          apply_mutations(accum, type, niled_map, timestamp, access)
+          apply_mutations(accum, type, Utils.nilled(type), timestamp, access)
 
         # Recurse for typed maps
         is_map(type) ->
@@ -47,7 +44,8 @@ defmodule AlchemyTable.Mutations do
     end)
   end
 
-  def mutate_cell(entry, type, value, timestamp, [family | columns]) do
+  @spec mutate_cell(Entry.t(), atom(), any(), integer(), [atom()]) :: Entry.t()
+  defp mutate_cell(entry, type, value, timestamp, [family | columns]) do
     family = to_string(family)
     qualifier = dot_notation(columns)
 
@@ -55,11 +53,11 @@ defmodule AlchemyTable.Mutations do
       Mutations.delete_from_column(entry, family, qualifier)
     else
       encoded = Encoding.encode(type, value)
-      ts = mutation_timestamp(timestamp)
-      Mutations.set_cell(entry, family, qualifier, encoded, ts)
+      Mutations.set_cell(entry, family, qualifier, encoded, timestamp)
     end
   end
 
+  @spec dot_notation([atom()]) :: binary()
   defp dot_notation(columns) do
     columns
     |> Enum.map(&to_string/1)
