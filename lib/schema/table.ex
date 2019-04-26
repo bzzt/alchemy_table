@@ -59,7 +59,7 @@ defmodule AlchemyTable.Table do
         opts: unquote(opts),
         table_name: unquote(name),
         schema: @schema,
-        merge_map: @schema |> Map.from_struct() |> Utils.nil_map(),
+        merge_map: @schema |> Map.from_struct() |> Utils.nilled(),
         full_name: Table.Utils.full_name(unquote(instance), unquote(name))
       }
 

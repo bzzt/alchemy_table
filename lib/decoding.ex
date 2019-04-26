@@ -25,8 +25,8 @@ defmodule AlchemyTable.Decoding do
   * `:keys` - The type of keys when decoding maps. Can be either `:atoms` or `:strings`. Defaults to `:atoms`.
   """
   @spec decode(atom(), binary(), list()) :: any()
-  def decode(type, v, opts \\ [mode: @mode]) do
-    mode = Keyword.fetch!(opts, :mode)
+  def decode(type, v, opts \\ []) do
+    mode = Keyword.get(opts, :mode, @mode)
     opts = Keyword.put_new(opts, :keys, :atoms)
 
     case mode do
@@ -39,16 +39,14 @@ defmodule AlchemyTable.Decoding do
   end
 
   defp decode_string(:integer, v, _opts) do
-    parsed = Integer.parse(v)
-
-    parsed
+    v
+    |> Integer.parse()
     |> elem(0)
   end
 
   defp decode_string(:float, v, _opts) do
-    parsed = Float.parse(v)
-
-    parsed
+    v
+    |> Float.parse()
     |> elem(0)
   end
 

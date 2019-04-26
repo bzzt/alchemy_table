@@ -57,7 +57,7 @@ defmodule ParsingTest do
 
       metadata = %{
         schema: schema,
-        merge_map: Utils.nil_map(schema)
+        merge_map: Utils.nilled(schema)
       }
 
       expected = %{
@@ -113,7 +113,7 @@ defmodule ParsingTest do
 
       metadata = %{
         schema: schema,
-        merge_map: Utils.nil_map(schema)
+        merge_map: Utils.nilled(schema)
       }
 
       expected = %{
