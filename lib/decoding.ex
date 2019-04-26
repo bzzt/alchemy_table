@@ -56,6 +56,7 @@ defmodule AlchemyTable.Decoding do
   defp decode_string(:boolean, "false", _opts), do: false
   defp decode_string(:boolean, "true", _opts), do: true
   defp decode_string(:string, v, _opts), do: v
+  defp decode_string(:id, v, _opts), do: v
 
   defp decode_bytes(:boolean, v, _opts) do
     case v do
@@ -77,6 +78,7 @@ defmodule AlchemyTable.Decoding do
   defp decode_bytes(:map, v, opts), do: decode_json(v, opts)
   defp decode_bytes(:list, v, opts), do: decode_json(v, opts)
   defp decode_bytes(:string, v, _opts), do: v
+  defp decode_bytes(:id, v, _opts), do: v
 
   defp decode_json(json, opts) do
     keys = Keyword.fetch!(opts, :keys)

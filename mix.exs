@@ -60,6 +60,7 @@ defmodule AlchemyTable.MixProject do
   defp deps do
     [
       {:bigtable, git: "https://github.com/bzzt/bigtable", branch: "develop"},
+      {:ecto, "~> 3.1.2"},
       {:deep_merge, "~> 0.1.1"},
       {:recase, "~> 0.4"},
       # Dev deps

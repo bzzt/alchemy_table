@@ -10,50 +10,34 @@ defmodule AlchemyTable.Mutations do
   Creates mutations for `data` based on a provided `schema`.
   Raises if `data` contains values that do not conform to schema. Values present in `data` that are not defined in the `schema` are passed through.
   """
-  @spec create_mutations(binary(), map(), map(), any()) :: Entry.t()
-  def create_mutations(row_key, schema, data, timestamp) do
-    Validation.validate_update!(schema, data)
-
+  def create_mutations(row_key, data, timestamp) do
     row_key
     |> Mutations.build()
-    |> apply_mutations(schema, data, mutation_timestamp(timestamp))
+    |> apply_mutations(data, mutation_timestamp(timestamp))
   end
 
-  @spec apply_mutations(Entry.t(), atom() | map(), any(), integer(), [atom()]) :: Entry.t()
-  defp apply_mutations(entry, schema, data, timestamp, access \\ []) do
+  defp apply_mutations(entry, data, timestamp, access \\ []) do
     Enum.reduce(data, entry, fn {k, v}, accum ->
-      type = Map.get(schema, k)
       access = [k | access]
 
       cond do
-        # pass through value if it does not exist in schema
-        is_nil(type) ->
-          accum
-
-        # if type is a map but value is nil, recurse with a map of nilled values
-        is_map(type) and empty_value?(v) ->
-          apply_mutations(accum, type, Utils.nilled(type), timestamp, access)
-
-        # Recurse for typed maps
-        is_map(type) ->
-          apply_mutations(accum, type, v, timestamp, access)
+        is_map(v) ->
+          apply_mutations(accum, v, timestamp, access)
 
         true ->
-          mutate_cell(accum, type, v, timestamp, Enum.reverse(access))
+          mutate_cell(accum, v, timestamp, Enum.reverse(access))
       end
     end)
   end
 
-  @spec mutate_cell(Entry.t(), atom(), any(), integer(), [atom()]) :: Entry.t()
-  defp mutate_cell(entry, type, value, timestamp, [family | columns]) do
+  defp mutate_cell(entry, value, timestamp, [family | columns]) do
     family = to_string(family)
     qualifier = dot_notation(columns)
 
     if is_nil(value) do
       Mutations.delete_from_column(entry, family, qualifier)
     else
-      encoded = Encoding.encode(type, value)
-      Mutations.set_cell(entry, family, qualifier, encoded, timestamp)
+      Mutations.set_cell(entry, family, qualifier, value, timestamp)
     end
   end
 
@@ -63,9 +47,6 @@ defmodule AlchemyTable.Mutations do
     |> Enum.map(&to_string/1)
     |> Enum.join(".")
   end
-
-  @spec empty_value?(any()) :: boolean()
-  defp empty_value?(v), do: is_nil(v) or v == ""
 
   # Builds a unix timestamp from either a datetime or ISO string
   @spec mutation_timestamp(DateTime.t() | binary()) :: integer()
