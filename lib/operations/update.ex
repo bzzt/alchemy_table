@@ -10,9 +10,8 @@ defmodule AlchemyTable.Operations.Update do
   end
 
   def update(module, data, opts) do
-    updates = build_updates(module, data, opts)
-
-    updates
+    module
+    |> build_updates(data, opts)
     |> Enum.map(&send_update(&1, opts))
     |> Map.new()
   end
@@ -113,10 +112,6 @@ defmodule AlchemyTable.Operations.Update do
 
       {table_name, mutate_rows(mutations, full_name)}
     end
-  end
-
-  def debug_updates() do
-    IO.puts("deffed")
   end
 
   defp mutate_row(mutations, table_name) do
