@@ -32,17 +32,15 @@ defmodule AlchemyTable do
   end
 
   def init(config) do
-    IO.inspect(config)
+    instance = Keyword.get(config, :instance)
+    project = Keyword.get(config, :project)
     import Supervisor.Spec
     child_spec = worker(__MODULE__.Connection, [])
-    {:ok, child_spec, %{}}
+    {:ok, child_spec, %{instance: instance, project: project}}
   end
 
   # ADAPTER
   def checkout(meta, opts, fun) do
-    IO.inspect(meta)
-    IO.inspect(opts)
-    IO.inspect(fun)
     apply(fun, [])
   end
 
@@ -70,19 +68,14 @@ defmodule AlchemyTable do
   def load_embed(type, value) do
     Ecto.Type.load(type, value, fn
       {:embed, _} = type, value ->
-        IO.puts("FO")
         load_embed(type, value)
 
       type, value ->
-        IO.puts("FOFOFOFOFOF")
-
         case Ecto.Type.cast(type, value) do
           {:ok, _} = ok ->
-            IO.inspect("HERE")
             ok
 
           _ ->
-            IO.inspect("HERE2")
             :error
         end
     end)
@@ -126,8 +119,18 @@ defmodule AlchemyTable do
     IO.puts("DELETE")
   end
 
-  def insert(_adapter_meta, %{source: source}, fields, on_conflict, returning, options) do
-    AlchemyTable.Mutations.create_mutations("VEHICLE#123", fields, DateTime.utc_now())
+  def insert(meta, %{source: source}, fields, _, _, _) do
+    %{instance: instance, project: project} = meta
+
+    update =
+      fields
+      |> Map.new()
+
+    {:ok, _} =
+      update.row_key
+      |> AlchemyTable.Mutations.create_mutations(update, DateTime.utc_now())
+      |> Bigtable.MutateRow.build("projects/#{project}/instances/#{instance}/tables/" <> source)
+      |> Bigtable.MutateRow.mutate()
 
     {:ok, []}
   end
