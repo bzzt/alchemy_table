@@ -63,6 +63,7 @@ defmodule SingleValuePromoted do
 
   table :single_value_promoted, row_key: "TABLE#[family_a.id]" do
     family :family_a do
+      column(:id, :string)
       column(:single, :string)
     end
   end

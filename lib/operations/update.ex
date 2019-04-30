@@ -44,10 +44,17 @@ defmodule AlchemyTable.Operations.Update do
 
   defp promoted_mutations(%{promoted: promoted}, data, opts) do
     for {column, module} <- promoted,
-        get_in(data, column) != nil,
+        has_key?(nil, column, data),
         into: [] do
       build_updates(module, data, opts)
     end
+  end
+
+  defp has_key?(false, _keys, _data), do: false
+  defp has_key?(result, [], _data), do: result
+
+  defp has_key?(_result, [h | t], data) do
+    has_key?(Map.has_key?(data, h), t, Map.get(data, h))
   end
 
   defp cloned_mutations(%{cloned: cloned}, main_key, main_update, data, timestamp) do
