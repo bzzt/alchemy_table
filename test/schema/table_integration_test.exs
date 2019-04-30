@@ -160,6 +160,20 @@ defmodule TableIntegrationTest do
     setup do
       row_key = "TABLE#id-1"
 
+      on_exit(fn ->
+        drop_row(WithPromoted, row_key)
+        drop_row(SingleValuePromoted, row_key)
+        drop_row(NestedValuePromoted, row_key)
+      end)
+
+      [row_key: row_key]
+    end
+
+    test "should write and read from promoted and base tables", %{row_key: row_key} do
+      assert WithPromoted.get() == {:ok, %{}}
+      assert SingleValuePromoted.get() == {:ok, %{}}
+      assert NestedValuePromoted.get() == {:ok, %{}}
+
       data = %{
         row_key => %{
           family_a: %{
@@ -178,30 +192,73 @@ defmodule TableIntegrationTest do
         }
       }
 
-      on_exit(fn ->
-        drop_row(WithPromoted, row_key)
-        drop_row(SingleValuePromoted, row_key)
-        drop_row(NestedValuePromoted, row_key)
-      end)
+      row_data =
+        data
+        |> Map.get(row_key)
+        |> WithPromoted.update()
 
-      [data: data, row_key: row_key]
+      {:ok, rows} = WithPromoted.get()
+
+      assert rows == data
     end
 
-    test "should write and read from promoted and base tables", context do
+    @tag :wip
+    test "should not write to promoted table if value is missing", %{row_key: row_key} do
       assert WithPromoted.get() == {:ok, %{}}
       assert SingleValuePromoted.get() == {:ok, %{}}
       assert NestedValuePromoted.get() == {:ok, %{}}
 
+      data = %{
+        row_key => %{
+          family_a: %{
+            id: "id-1"
+          }
+        }
+      }
+
       row_data =
-        context.data
-        |> Map.get(context.row_key)
+        data
+        |> Map.get(row_key)
+        |> WithPromoted.update()
 
-      row_data
-      |> WithPromoted.update()
+      {:ok, rows} = SingleValuePromoted.get()
 
-      {:ok, rows} = WithPromoted.get()
+      assert rows == %{}
+    end
 
-      assert rows == context.data
+    @tag :wip
+    test "should write to promoted table if value is nil", %{row_key: row_key} do
+      assert WithPromoted.get() == {:ok, %{}}
+      assert SingleValuePromoted.get() == {:ok, %{}}
+      assert NestedValuePromoted.get() == {:ok, %{}}
+
+      data = %{
+        row_key => %{
+          family_a: %{
+            id: "id-1",
+            single: nil
+          },
+          family_b: %{
+            nested: nil
+          }
+        }
+      }
+
+      row_data =
+        data
+        |> Map.get(row_key)
+        |> WithPromoted.update()
+
+      expected = %{
+        row_key => %{
+          family_a: %{
+            id: "id-1"
+          }
+        }
+      }
+
+      {:ok, rows} = SingleValuePromoted.get()
+      assert rows == expected
     end
   end
 

@@ -81,13 +81,23 @@ defmodule AlchemyTable.Mutations do
   # Returns a map of nil values
   @spec nil_values(map()) :: nil_map()
   defp nil_values(schema) do
-    Enum.reduce(schema, %{}, fn {k, v}, accum ->
+    schema
+    |> map_from_struct()
+    |> Enum.reduce(%{}, fn {k, v}, accum ->
       if is_map(v) do
         Map.put(accum, k, nil_values(v))
       else
         Map.put(accum, k, nil)
       end
     end)
+  end
+
+  defp map_from_struct(map) do
+    if Map.has_key?(map, :__struct__) do
+      Map.from_struct(map)
+    else
+      map
+    end
   end
 
   # Builds up a dot notation column qualifier if the current column has a parent key
