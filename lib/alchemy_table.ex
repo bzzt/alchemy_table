@@ -166,7 +166,7 @@ defmodule AlchemyTable.Query do
   def all(%Ecto.Query{} = query, params, adapter_meta) do
     %{instance: instance, project: project} = adapter_meta
 
-    %{from: from} = query
+    %{from: from, wheres: wheres} = query
 
     IO.puts("QUERY - ALL")
     {table, model} = from.source
@@ -176,6 +176,7 @@ defmodule AlchemyTable.Query do
     {:ok, rows} =
       "projects/#{project}/instances/#{instance}/tables/#{table}"
       |> Bigtable.ReadRows.build()
+      |> maybe_filter(wheres, params)
       |> Bigtable.ReadRows.read()
 
     parsed =
@@ -189,4 +190,29 @@ defmodule AlchemyTable.Query do
 
     {length(parsed), parsed}
   end
+
+  defp maybe_filter(request, [], _params), do: request
+
+  defp maybe_filter(request, wheres, params) do
+    Enum.reduce(wheres, request, fn %Ecto.Query.BooleanExpr{expr: expr}, accum ->
+      expr
+      |> pair(params)
+      |> IO.inspect()
+      |> filter(accum)
+    end)
+  end
+
+  def filter({:row_key, row_key}, request) do
+    request
+    |> Bigtable.RowSet.row_keys(row_key)
+  end
+
+  defp pair({:==, _, [left, right]}, params) do
+    {field(left), value(right, params)}
+  end
+
+  defp value({:^, _, [index]}, params), do: Enum.at(params, index)
+  defp value(value, _), do: value
+
+  defp field({{:., _, [{:&, _, [0]}, field]}, _, []}), do: field
 end
