@@ -19,7 +19,6 @@ defmodule AlchemyTable do
   @behaviour Ecto.Adapter
   @behaviour Ecto.Adapter.Schema
   @behaviour Ecto.Adapter.Queryable
-
   defmacro __before_compile__(_) do
   end
 
@@ -165,12 +164,10 @@ defmodule AlchemyTable do
 
   # QUERYABLE
   def execute(adapter_meta, _query_meta, {:nocache, {function, query}}, params, options) do
-    IO.puts("EXECUTE")
     apply(AlchemyTable.Query, function, [query, params, adapter_meta])
   end
 
   def prepare(atom, query) do
-    IO.puts("PREPARE")
     {:nocache, {atom, query}}
   end
 end
@@ -204,6 +201,42 @@ defmodule AlchemyTable.Query do
     {length(parsed), parsed}
   end
 
+  def update_all(%Ecto.Query{} = query, params, adapter_meta) do
+    IO.puts("UPDATE ALL")
+    %{instance: instance, project: project} = adapter_meta
+
+    %{from: from, updates: updates, wheres: wheres} = query
+    {table, _model} = from.source
+    table_name = "projects/#{project}/instances/#{instance}/tables/#{table}"
+
+    {:ok, rows} =
+      table_name
+      |> Bigtable.ReadRows.build()
+      |> maybe_filter(wheres, params)
+      |> Bigtable.ReadRows.read()
+
+    row_keys =
+      rows
+      |> AlchemyTable.Parsing.parse_rows()
+      |> Enum.map(&Map.fetch!(&1, :row_key))
+
+    entry =
+      updates
+      |> Enum.flat_map(fn %Ecto.Query.QueryExpr{expr: expr} ->
+        Enum.map(expr, fn update ->
+          updates(update, params)
+        end)
+      end)
+      |> List.first()
+
+    row_keys
+    |> Enum.map(fn k ->
+      Map.put(entry, :row_key, k)
+    end)
+    |> Bigtable.MutateRows.build(table_name)
+    |> Bigtable.MutateRows.mutate()
+  end
+
   defp maybe_filter(request, [], _params), do: request
 
   defp maybe_filter(request, wheres, params) do
@@ -212,6 +245,16 @@ defmodule AlchemyTable.Query do
       |> pair(params)
       |> filter(accum)
     end)
+  end
+
+  def updates({:set, keys}, params) do
+    data =
+      for {k, v} <- keys do
+        {k, value(v, params)}
+      end
+
+    "ROW_KEY"
+    |> AlchemyTable.Mutations.create_mutations(data, DateTime.utc_now())
   end
 
   def filter({:row_key, row_key}, request) do
