@@ -146,8 +146,21 @@ defmodule AlchemyTable do
     IO.puts("INSERT ALL")
   end
 
-  def update(adapter_meta, schema_meta, fields, filters, returning, options) do
-    IO.puts("UPDATE")
+  def update(adapter_meta, %{source: source}, fields, filters, _returning, _options) do
+    %{instance: instance, project: project} = adapter_meta
+
+    update =
+      fields
+      |> Map.new()
+
+    {:ok, _} =
+      filters
+      |> Keyword.get(:row_key)
+      |> AlchemyTable.Mutations.create_mutations(update, DateTime.utc_now())
+      |> Bigtable.MutateRow.build("projects/#{project}/instances/#{instance}/tables/" <> source)
+      |> Bigtable.MutateRow.mutate()
+
+    {:ok, []}
   end
 
   # QUERYABLE
@@ -197,7 +210,6 @@ defmodule AlchemyTable.Query do
     Enum.reduce(wheres, request, fn %Ecto.Query.BooleanExpr{expr: expr}, accum ->
       expr
       |> pair(params)
-      |> IO.inspect()
       |> filter(accum)
     end)
   end
