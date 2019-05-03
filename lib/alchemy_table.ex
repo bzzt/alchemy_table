@@ -6,6 +6,7 @@ defmodule AlchemyTable.Connection do
   end
 
   def init(:ok) do
+    IO.puts("INSIDE CONNECTION")
     {:ok, %{}}
   end
 end
@@ -13,10 +14,11 @@ end
 defmodule AlchemyTable do
   @moduledoc false
 
-  alias AlchemyTable.{Decoding, Encoding}
+  alias AlchemyTable.{Connection, Decoding, Encoding}
 
   @behaviour Ecto.Adapter
   @behaviour Ecto.Adapter.Schema
+  @behaviour Ecto.Adapter.Queryable
 
   defmacro __before_compile__(_) do
   end
@@ -35,12 +37,15 @@ defmodule AlchemyTable do
     instance = Keyword.get(config, :instance)
     project = Keyword.get(config, :project)
     import Supervisor.Spec
-    child_spec = worker(__MODULE__.Connection, [])
+    child_spec = worker(Connection, [])
     {:ok, child_spec, %{instance: instance, project: project}}
   end
 
   # ADAPTER
   def checkout(meta, opts, fun) do
+    IO.puts("INSIDE CHECKOUT")
+    IO.inspect(meta)
+    IO.inspect(opts)
     apply(fun, [])
   end
 
@@ -122,12 +127,14 @@ defmodule AlchemyTable do
   def insert(meta, %{source: source}, fields, _, _, _) do
     %{instance: instance, project: project} = meta
 
+    {row_key, data} = Keyword.pop(fields, :row_key)
+
     update =
-      fields
+      data
       |> Map.new()
 
     {:ok, _} =
-      update.row_key
+      row_key
       |> AlchemyTable.Mutations.create_mutations(update, DateTime.utc_now())
       |> Bigtable.MutateRow.build("projects/#{project}/instances/#{instance}/tables/" <> source)
       |> Bigtable.MutateRow.mutate()
@@ -141,5 +148,45 @@ defmodule AlchemyTable do
 
   def update(adapter_meta, schema_meta, fields, filters, returning, options) do
     IO.puts("UPDATE")
+  end
+
+  # QUERYABLE
+  def execute(adapter_meta, _query_meta, {:nocache, {function, query}}, params, options) do
+    IO.puts("EXECUTE")
+    apply(AlchemyTable.Query, function, [query, params, adapter_meta])
+  end
+
+  def prepare(atom, query) do
+    IO.puts("PREPARE")
+    {:nocache, {atom, query}}
+  end
+end
+
+defmodule AlchemyTable.Query do
+  def all(%Ecto.Query{} = query, params, adapter_meta) do
+    %{instance: instance, project: project} = adapter_meta
+
+    %{from: from} = query
+
+    IO.puts("QUERY - ALL")
+    {table, model} = from.source
+
+    fields = model.__schema__(:fields)
+
+    {:ok, rows} =
+      "projects/#{project}/instances/#{instance}/tables/#{table}"
+      |> Bigtable.ReadRows.build()
+      |> Bigtable.ReadRows.read()
+
+    parsed =
+      rows
+      |> AlchemyTable.Parsing.parse_rows()
+      |> Enum.map(fn r ->
+        Enum.map(fields, fn f ->
+          Map.get(r, f)
+        end)
+      end)
+
+    {length(parsed), parsed}
   end
 end

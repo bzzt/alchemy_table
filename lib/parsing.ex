@@ -8,41 +8,25 @@ defmodule AlchemyTable.Parsing do
   @doc """
   Parses the result of a `Bigtable.ChunkReader` based on a provided `schema`.
   """
-  @spec parse_rows(map(), map()) :: map()
-  def parse_rows(rows, metadata) do
-    %{schema: schema, merge_map: merge_map} = metadata
+  def parse_rows(rows) do
+    for {row_key, chunks} <- rows do
+      {row_key, parse_chunks(chunks)}
 
-    for {row_key, chunks} <- rows, into: %{} do
-      parsed =
-        chunks
-        |> parse_chunks(schema)
-        |> merge_with_defaults(merge_map)
-
-      {row_key, parsed}
+      chunks
+      |> parse_chunks()
+      |> Map.put(:row_key, row_key)
     end
   end
 
-  # Merges the parsed row with the schema's default values
-  # Defaults to a map full of nils
-  @spec merge_with_defaults(map(), map()) :: map()
-  defp merge_with_defaults(parsed, merge_map), do: DeepMerge.deep_merge(merge_map, parsed)
-
   # Parse the row's chunks using the defined schema
-  @spec parse_chunks([ReadCell.t()], map()) :: map()
-  defp parse_chunks(chunks, schema) do
+  defp parse_chunks(chunks) do
     Enum.reduce(chunks, %{}, fn chunk, accum ->
       # build an access function to fetch the chunk's type from
       # the schema and put the value into the return map
       access_func = build_access_function(chunk)
 
-      ## Decode the cell's value based on the defined schema
-      decoded =
-        schema
-        |> get_in(access_func)
-        |> Decoding.decode(chunk.value)
-
       # assign the decoded value to the accum using access func
-      put_in(accum, access_func, decoded)
+      put_in(accum, access_func, chunk.value)
     end)
   end
 
