@@ -267,7 +267,7 @@ defmodule TableIntegrationTest do
 
     full_name = AlchemyTable.Table.Utils.full_name(instance, table_name)
 
-    {:ok, _} =
+    {:ok, _query, _response} =
       row_key
       |> Mutations.build()
       |> Mutations.delete_from_row()

@@ -94,13 +94,11 @@ defmodule AlchemyTable.Operations.Update do
   end
 
   defp send_update({module, mutations}, opts) do
-    # TODO: Think of a new way to do this. Couldn't use compiled metadata
-    # due to Bzzt.env() being a system env rather than mix env
     %{instance: instance, table_name: table_name} = module.__alchemy_metadata__()
 
     full_name = Table.Utils.full_name(instance, table_name)
 
-    with {:ok, _} <- mutate_row(mutations, full_name) do
+    with {:ok, _query, _response} <- mutate_row(mutations, full_name) do
       response = build_response(module, mutations.row_key, opts)
       {table_name, response}
     else
@@ -111,8 +109,6 @@ defmodule AlchemyTable.Operations.Update do
 
   defp send_updates(updates, _opts) do
     for {module, mutations} <- updates do
-      # TODO: Think of a new way to do this. Couldn't use compiled metadata
-      # due to Bzzt.env() being a system env rather than mix env
       %{instance: instance, table_name: table_name} = module.__alchemy_metadata__()
 
       full_name = Table.Utils.full_name(instance, table_name)
