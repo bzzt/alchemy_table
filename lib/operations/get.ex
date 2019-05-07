@@ -19,11 +19,12 @@ defmodule AlchemyTable.Operations.Get do
 
     request
     |> Map.put(:table_name, full_name)
+    |> Bigtable.RowFilter.cells_per_column(1)
     |> read_and_parse(metadata)
   end
 
   @spec read_and_parse(ReadRowsRequest.t(), map()) :: get_response()
-  defp(read_and_parse(request, metadata)) do
+  defp read_and_parse(request, metadata) do
     with {:ok, _query, rows} <- ReadRows.read(request),
          result <- Parsing.parse_rows(rows, metadata) do
       {:ok, result}

@@ -59,7 +59,7 @@ defmodule AlchemyTable.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:bigtable, git: "https://github.com/bzzt/bigtable", branch: "ecto"},
+      {:bigtable, git: "https://github.com/bzzt/bigtable", branch: "develop"},
       # {:bigtable, path: "../bigtable"},
       {:deep_merge, "~> 0.1.1"},
       {:recase, "~> 0.4"},
