@@ -56,6 +56,8 @@ defmodule AlchemyTable.Decoding do
   defp decode_string(:boolean, "false", _opts), do: false
   defp decode_string(:boolean, "true", _opts), do: true
   defp decode_string(:string, v, _opts), do: v
+  defp decode_string(:naive_datetime, v, _opts), do: v
+  defp decode_string(:utc_datetime, v, _opts), do: v
   defp decode_string(:id, v, _opts), do: v
 
   defp decode_bytes(:boolean, v, _opts) do

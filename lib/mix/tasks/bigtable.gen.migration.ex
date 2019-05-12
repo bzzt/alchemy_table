@@ -18,7 +18,6 @@ defmodule Mix.Tasks.Bigtable.Gen.Migration do
   ]
 
   def run(args) do
-    IO.puts("HERE!")
     repos = parse_repo(args)
 
     Enum.map(repos, fn repo ->

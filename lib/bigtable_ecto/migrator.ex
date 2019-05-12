@@ -21,6 +21,7 @@ defmodule Bigtable.Ecto.Migrator do
   """
 
   require Logger
+  import Ecto.Query
 
   alias Bigtable.Ecto.Migration.Runner
   alias Bigtable.Ecto.Migration.SchemaMigration
@@ -140,8 +141,6 @@ defmodule Bigtable.Ecto.Migrator do
   end
 
   defp do_up(repo, version, module, opts) do
-    IO.puts("==== DO UP ====")
-
     async_migrate_maybe_in_transaction(repo, version, :up, opts, fn ->
       attempt(repo, version, module, :forward, :up, :up, opts) ||
         attempt(repo, version, module, :forward, :change, :up, opts) ||
@@ -351,7 +350,7 @@ defmodule Bigtable.Ecto.Migrator do
     # "projects/#{project}/instances/#{instance}/tables/schema_migration"
     # |> Bigtable.ReadRows.read()
 
-    SchemaMigration
+    from(m in SchemaMigration, select: m.row_key)
     |> repo.all()
     |> fun.()
 
@@ -388,14 +387,6 @@ defmodule Bigtable.Ecto.Migrator do
   end
 
   defp run_all(repo, versions, migration_source, direction, opts) do
-    IO.puts("===== RUN ALL ====")
-    IO.inspect(repo)
-    IO.inspect(versions)
-    IO.inspect(migration_source)
-    IO.inspect(direction)
-    IO.inspect(opts)
-    IO.puts("==============")
-
     pending_in_direction(versions, migration_source, direction)
     |> migrate(direction, repo, opts)
   end
@@ -479,8 +470,6 @@ defmodule Bigtable.Ecto.Migrator do
   end
 
   defp do_migrate(migrations, direction, repo, opts) do
-    IO.puts("===== DO MIGRATE ======")
-
     Enum.reduce_while(migrations, [], fn {version, name_or_mod, file}, versions ->
       with {:ok, mod} <- extract_module(file, name_or_mod),
            :ok <- do_direction(direction, repo, version, mod, opts) do

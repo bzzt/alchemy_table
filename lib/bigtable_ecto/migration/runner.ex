@@ -14,7 +14,6 @@ defmodule Bigtable.Ecto.Migration.Runner do
   Runs the given migration.
   """
   def run(repo, version, module, direction, operation, migrator_direction, opts) do
-    IO.puts("==== RUNNER RUN ===== ")
     level = Keyword.get(opts, :log, :info)
     sql = Keyword.get(opts, :log_sql, false)
     log = %{level: level, sql: sql}

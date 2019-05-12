@@ -36,8 +36,8 @@ defmodule Bigtable.Ecto.Adapter do
       "#{inspect(__MODULE__)}.ensure_all_started params #{inspect(%{type: type, repo: repo})}"
     )
 
-    with {:ok, _} = Application.ensure_all_started(:bigtable) do
-      {:ok, [repo]}
+    with {:ok, apps} <- Application.ensure_all_started(:bigtable) do
+      {:ok, apps}
     end
   end
 
@@ -115,7 +115,7 @@ defmodule Bigtable.Ecto.Adapter do
       data
       |> Map.new()
 
-    {:ok, _} =
+    {:ok, _query, _result} =
       row_key
       |> AlchemyTable.Mutations.create_mutations(update, DateTime.utc_now())
       |> Bigtable.MutateRow.build("projects/#{project}/instances/#{instance}/tables/" <> source)

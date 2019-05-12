@@ -51,5 +51,7 @@ defmodule AlchemyTable.Encoding do
   defp encode_bytes(:list, v), do: Poison.encode!(v)
   defp encode_bytes(:map, v), do: Poison.encode!(v)
   defp encode_bytes(:string, v), do: to_string(v)
+  defp encode_bytes(:naive_datetime, v), do: to_string(v)
+  defp encode_bytes(:utc_datetime, v), do: to_string(v)
   defp encode_bytes(:id, v), do: to_string(v)
 end
