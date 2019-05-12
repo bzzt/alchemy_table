@@ -343,27 +343,9 @@ defmodule Bigtable.Ecto.Migrator do
   end
 
   defp get_migrations(repo, opts, fun) do
-    # %{instance: instance, project: project} = repo
-    # query = SchemaMigration.versions(repo, opts[:prefix])
-    # meta = Ecto.Adapter.lookup_meta(repo)
-
-    # "projects/#{project}/instances/#{instance}/tables/schema_migration"
-    # |> Bigtable.ReadRows.read()
-
     from(m in SchemaMigration, select: m.row_key)
     |> repo.all()
     |> fun.()
-
-    # case repo.__adapter__.lock_for_migrations(meta, query, opts, &fun.(repo.all(&1))) do
-    #   {kind, reason, stacktrace} ->
-    #     :erlang.raise(kind, reason, stacktrace)
-
-    #   {:error, error} ->
-    #     raise error
-
-    #   result ->
-    #     result
-    # end
   end
 
   defp run_to(repo, versions, migration_source, direction, target, opts) do

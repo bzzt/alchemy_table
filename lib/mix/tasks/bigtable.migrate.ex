@@ -113,8 +113,6 @@ defmodule Mix.Tasks.Bigtable.Migrate do
 
       case Bigtable.Ecto.Migrator.with_repo(repo, fun, [mode: :temporary] ++ opts) do
         {:ok, migrated, apps} ->
-          IO.puts("MIGRATED: #{inspect(migrated)}")
-          IO.puts("APPS: #{inspect(apps)}")
           restart_apps_if_migrated(apps, migrated)
 
         {:error, error} ->

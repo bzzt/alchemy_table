@@ -101,8 +101,6 @@ defmodule AlchemyTable.Query do
   defp maybe_filter(request, [], _params), do: request
 
   defp maybe_filter(request, wheres, params) do
-    IO.inspect(wheres)
-
     Enum.reduce(wheres, request, fn %Ecto.Query.BooleanExpr{expr: expr}, accum ->
       expr
       |> pair(params)
