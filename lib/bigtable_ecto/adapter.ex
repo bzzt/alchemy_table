@@ -1,20 +1,8 @@
-defmodule AlchemyTable.Connection do
-  use GenServer
-
-  def start_link() do
-    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
-  end
-
-  def init(:ok) do
-    IO.puts("INSIDE CONNECTION")
-    {:ok, %{}}
-  end
-end
-
-defmodule AlchemyTable do
+defmodule Bigtable.Ecto.Adapter do
   @moduledoc false
 
-  alias AlchemyTable.{Connection, Decoding, Encoding}
+  alias AlchemyTable.{Decoding, Encoding}
+  alias Bigtable.Ecto.Connection
 
   @behaviour Ecto.Adapter
   @behaviour Ecto.Adapter.Schema
@@ -181,9 +169,11 @@ defmodule AlchemyTable.Query do
     IO.puts("QUERY - ALL")
     {table, model} = from.source
 
+    IO.inspect(table)
+
     fields = model.__schema__(:fields)
 
-    {:ok, rows} =
+    {:ok, _query, rows} =
       "projects/#{project}/instances/#{instance}/tables/#{table}"
       |> Bigtable.ReadRows.build()
       |> maybe_filter(wheres, params)

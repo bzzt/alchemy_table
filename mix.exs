@@ -5,7 +5,7 @@ defmodule AlchemyTable.MixProject do
 
   def project do
     [
-      app: :alchemy_table,
+      app: :"bigtable.ecto",
       version: @version,
       package: package(),
       elixir: "~> 1.7",
