@@ -25,6 +25,38 @@ defmodule Bigtable.Ecto.Migrator do
   alias Bigtable.Ecto.Migration.Runner
   alias Bigtable.Ecto.Migration.SchemaMigration
 
+  def with_repo(repo, fun, opts \\ []) do
+    config = repo.config()
+    mode = Keyword.get(opts, :mode, :permanent)
+    apps = [:bigtable_ecto | config[:start_apps_before_migration] || []]
+
+    extra_started =
+      Enum.flat_map(apps, fn app ->
+        {:ok, started} = Application.ensure_all_started(app, mode)
+        started
+      end)
+
+    {:ok, repo_started} = Bigtable.Ecto.Adapter.ensure_all_started(config, mode)
+
+    started = extra_started ++ repo_started
+    pool_size = Keyword.get(opts, :pool_size, 2)
+
+    case repo.start_link(pool_size: pool_size) do
+      {:ok, _} ->
+        try do
+          {:ok, fun.(repo), started}
+        after
+          repo.stop()
+        end
+
+      {:error, {:already_started, _pid}} ->
+        {:ok, fun.(repo), started}
+
+      {:error, _} = error ->
+        error
+    end
+  end
+
   @doc """
   Gets the migrations path from a repository.
   """

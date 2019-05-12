@@ -31,7 +31,6 @@ defmodule Mix.Tasks.Bigtable.Migrate do
   in your repository name. For example, the repository `MyApp.Repo`
   will use "priv/repo/migrations". The repository `Whatever.MyRepo`
   will use "priv/my_repo/migrations".
-
   You can configure a repository to use another directory by specifying
   the `:priv` key under the repository configuration. The "migrations"
   part will be automatically appended to it. For instance, to use
@@ -96,23 +95,34 @@ defmodule Mix.Tasks.Bigtable.Migrate do
         do: Keyword.merge(opts, log: false, log_sql: false),
         else: opts
 
-    Enum.each(repos, fn repo ->
+    # Start ecto_sql explicitly before as we don't need
+    # to restart those apps if migrated.
+    {:ok, foo} = Application.ensure_all_started(:bigtable_ecto)
+
+    IO.inspect(foo)
+
+    for repo <- repos do
       ensure_repo(repo, args)
       path = ensure_migrations_path(repo)
-      {:ok, pid, apps} = ensure_started(repo, opts)
-
       pool = repo.config[:pool]
 
-      migrated =
+      fun =
         if function_exported?(pool, :unboxed_run, 2) do
-          pool.unboxed_run(repo, fn -> migrator.(repo, path, :up, opts) end)
+          &pool.unboxed_run(&1, fn -> migrator.(&1, path, :up, opts) end)
         else
-          migrator.(repo, path, :up, opts)
+          &migrator.(&1, path, :up, opts)
         end
 
-      pid && repo.stop()
-      restart_apps_if_migrated(apps, migrated)
-    end)
+      case Bigtable.Ecto.Migrator.with_repo(repo, fun, [mode: :temporary] ++ opts) do
+        {:ok, migrated, apps} ->
+          restart_apps_if_migrated(apps, migrated)
+
+        {:error, error} ->
+          Mix.raise("Could not start repo #{inspect(repo)}, error: #{inspect(error)}")
+      end
+    end
+
+    :ok
   end
 
   defp ensure_migrations_path(repo) do
@@ -139,11 +149,11 @@ defmodule Mix.Tasks.Bigtable.Migrate do
   end
 
   def ensure_started(repo, opts) do
-    {:ok, started} = Application.ensure_all_started(Bigtable.Ecto)
+    {:ok, started} = Application.ensure_all_started(:"bigtable.ecto")
 
     # If we starting EctoSQL just now, assume
     # logger has not been properly booted yet.
-    if :alchemy_table in started && Process.whereis(Logger) do
+    if :bigtable_ecto in started && Process.whereis(Logger) do
       backends = Application.get_env(:logger, :backends, [])
 
       try do

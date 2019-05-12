@@ -6,7 +6,6 @@ defmodule Bigtable.Ecto.Connection do
   end
 
   def init(:ok) do
-    IO.puts("INSIDE CONNECTION")
     {:ok, %{}}
   end
 end

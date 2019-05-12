@@ -21,16 +21,23 @@ defmodule Bigtable.Ecto.Migration.Runner do
     args = [self(), repo, direction, migrator_direction, log]
 
     {:ok, runner} = Supervisor.start_child(Bigtable.Ecto.Migration.Supervisor, args)
-    IO.inspect(runner)
-    # metadata(runner, opts)
+    metadata(runner, opts)
 
-    # log(level, "== Running #{version} #{inspect(module)}.#{operation}/0 #{direction}")
-    # {time1, _} = :timer.tc(module, operation, [])
-    # {time2, _} = :timer.tc(&flush/0, [])
-    # time = time1 + time2
-    # log(level, "== Migrated #{version} in #{inspect(div(time, 100_000) / 10)}s")
+    log(level, "== Running #{version} #{inspect(module)}.#{operation}/0 #{direction}")
+    {time1, _} = :timer.tc(module, operation, [])
+    {time2, _} = :timer.tc(&flush/0, [])
+    time = time1 + time2
+    log(level, "== Migrated #{version} in #{inspect(div(time, 100_000) / 10)}s")
 
-    # stop()
+    stop()
+  end
+
+  def child_spec(opts) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [opts]},
+      type: :worker
+    }
   end
 
   @doc """

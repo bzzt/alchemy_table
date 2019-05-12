@@ -2,7 +2,6 @@ defmodule Bigtable.Ecto.Adapter do
   @moduledoc false
 
   alias AlchemyTable.{Decoding, Encoding}
-  alias Bigtable.Ecto.Connection
 
   @behaviour Ecto.Adapter
   @behaviour Ecto.Adapter.Schema
@@ -10,29 +9,25 @@ defmodule Bigtable.Ecto.Adapter do
   defmacro __before_compile__(_) do
   end
 
-  def start_link(repo, opts) do
-    IO.puts(
-      "#{inspect(__MODULE__)}.start_link #{inspect(__MODULE__)}.start_link-params #{
-        inspect(%{repo: repo, opts: opts})
-      }"
-    )
+  # def start_link(repo, opts) do
+  #   IO.puts(
+  #     "#{inspect(__MODULE__)}.start_link #{inspect(__MODULE__)}.start_link-params #{
+  #       inspect(%{repo: repo, opts: opts})
+  #     }"
+  #   )
 
-    Agent.start_link(fn -> [] end)
-  end
+  #   Agent.start_link(fn -> [] end)
+  # end
 
   def init(config) do
     instance = Keyword.get(config, :instance)
     project = Keyword.get(config, :project)
-    import Supervisor.Spec
-    child_spec = worker(Connection, [])
-    {:ok, child_spec, %{instance: instance, project: project}}
+
+    {:ok, Bigtable.child_spec(config), %{instance: instance, project: project}}
   end
 
   # ADAPTER
   def checkout(meta, opts, fun) do
-    IO.puts("INSIDE CHECKOUT")
-    IO.inspect(meta)
-    IO.inspect(opts)
     apply(fun, [])
   end
 
@@ -41,7 +36,7 @@ defmodule Bigtable.Ecto.Adapter do
       "#{inspect(__MODULE__)}.ensure_all_started params #{inspect(%{type: type, repo: repo})}"
     )
 
-    with {:ok, _} = Application.ensure_all_started(:alchemy_table) do
+    with {:ok, _} = Application.ensure_all_started(:bigtable) do
       {:ok, [repo]}
     end
   end

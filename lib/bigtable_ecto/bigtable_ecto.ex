@@ -2,6 +2,8 @@ defmodule Bigtable.Ecto do
   use Application
 
   def start(_, _) do
+    IO.puts("INSIDE APP")
+
     children = [
       Bigtable.Ecto.Migration.Supervisor
     ]

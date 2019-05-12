@@ -5,7 +5,7 @@ defmodule AlchemyTable.MixProject do
 
   def project do
     [
-      app: :"bigtable.ecto",
+      app: :bigtable_ecto,
       version: @version,
       package: package(),
       elixir: "~> 1.7",
@@ -52,7 +52,8 @@ defmodule AlchemyTable.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:ecto, :bigtable, :logger],
+      mod: {Bigtable.Ecto, []}
     ]
   end
 
