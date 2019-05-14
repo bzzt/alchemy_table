@@ -1,7 +1,8 @@
 defmodule Bigtable.Ecto.Adapter do
   @moduledoc false
 
-  alias AlchemyTable.{Decoding, Encoding}
+  alias Bigtable.Ecto.{Admin, Decoding, Encoding, Query}
+  alias Bigtable.Ecto.Migration.Table
 
   @behaviour Ecto.Adapter
   @behaviour Ecto.Adapter.Schema
@@ -137,7 +138,15 @@ defmodule Bigtable.Ecto.Adapter do
 
   # QUERYABLE
   def execute(adapter_meta, _query_meta, {:nocache, {function, query}}, params, options) do
-    apply(AlchemyTable.Query, function, [query, params, adapter_meta])
+    apply(Query, function, [query, params, adapter_meta])
+  end
+
+  def execute_ddl(adapter_meta, {function, %Table{} = table, operations}, opts) do
+    apply(Admin, function, [adapter_meta, table, operations, opts])
+  end
+
+  def execute_ddl(adapter_meta, {function, %Table{} = table}, opts) do
+    apply(Admin, function, [adapter_meta, table, opts])
   end
 
   def prepare(atom, query) do

@@ -1,4 +1,4 @@
-defmodule AlchemyTable.Encoding do
+defmodule Bigtable.Ecto.Encoding do
   @moduledoc """
   Provides the ability to encode a value to a binary for use in a `Google.Bigtable.V2.Mutation` 
   """

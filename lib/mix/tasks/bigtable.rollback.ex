@@ -111,7 +111,9 @@ defmodule Mix.Tasks.Bigtable.Rollback do
 
       case Bigtable.Ecto.Migrator.with_repo(repo, fun, [mode: :temporary] ++ opts) do
         {:ok, migrated, apps} ->
-          restart_apps_if_migrated(apps, migrated)
+          IO.inspect(migrated)
+
+        # restart_apps_if_migrated(apps, migrated)
 
         {:error, error} ->
           Mix.raise("Could not start repo #{inspect(repo)}, error: #{inspect(error)}")

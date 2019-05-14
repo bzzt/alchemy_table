@@ -1,4 +1,4 @@
-defmodule AlchemyTable.Query do
+defmodule Bigtable.Ecto.Query do
   def all(%Ecto.Query{} = query, params, adapter_meta) do
     %{instance: instance, project: project} = adapter_meta
 

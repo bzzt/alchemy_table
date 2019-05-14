@@ -307,11 +307,10 @@ defmodule Bigtable.Ecto.Migration.Runner do
   defp log_and_execute_ddl(repo, %{level: level, sql: sql}, command) do
     log(level, command(command))
     meta = Ecto.Adapter.lookup_meta(repo)
-    {:ok, logs} = repo.__adapter__.execute_ddl(meta, command, timeout: :infinity, log: sql)
 
-    Enum.each(logs, fn {level, message, metadata} ->
-      Logger.log(level, message, metadata)
-    end)
+    result = repo.__adapter__.execute_ddl(meta, command, timeout: :infinity, log: sql)
+
+    Logger.log(level, "#{inspect(result)}")
 
     :ok
   end
@@ -337,18 +336,6 @@ defmodule Bigtable.Ecto.Migration.Runner do
   defp command({:drop_if_exists, %Table{} = table}),
     do: "drop table if exists #{quote_name(table.prefix, table.name)}"
 
-  defp command({:create, %Index{} = index}),
-    do: "create index #{quote_name(index.prefix, index.name)}"
-
-  defp command({:create_if_not_exists, %Index{} = index}),
-    do: "create index if not exists #{quote_name(index.prefix, index.name)}"
-
-  defp command({:drop, %Index{} = index}),
-    do: "drop index #{quote_name(index.prefix, index.name)}"
-
-  defp command({:drop_if_exists, %Index{} = index}),
-    do: "drop index if exists #{quote_name(index.prefix, index.name)}"
-
   defp command({:rename, %Table{} = current_table, %Table{} = new_table}),
     do:
       "rename table #{quote_name(current_table.prefix, current_table.name)} to #{
@@ -361,33 +348,8 @@ defmodule Bigtable.Ecto.Migration.Runner do
         quote_name(table.prefix, table.name)
       }"
 
-  defp command({:create, %Constraint{check: nil, exclude: nil}}),
-    do: raise(ArgumentError, "a constraint must have either a check or exclude option")
-
-  defp command({:create, %Constraint{check: check, exclude: exclude}})
-       when is_binary(check) and is_binary(exclude),
-       do: raise(ArgumentError, "a constraint must not have both check and exclude options")
-
-  defp command({:create, %Constraint{check: check} = constraint}) when is_binary(check),
-    do:
-      "create check constraint #{constraint.name} on table #{
-        quote_name(constraint.prefix, constraint.table)
-      }"
-
-  defp command({:create, %Constraint{exclude: exclude} = constraint}) when is_binary(exclude),
-    do:
-      "create exclude constraint #{constraint.name} on table #{
-        quote_name(constraint.prefix, constraint.table)
-      }"
-
-  defp command({:drop, %Constraint{} = constraint}),
-    do:
-      "drop constraint #{constraint.name} from table #{
-        quote_name(constraint.prefix, constraint.table)
-      }"
-
   defp quote_name(nil, name), do: quote_name(name)
-  defp quote_name(prefix, name), do: quote_name(prefix) <> "." <> quote_name(name)
+  defp quote_name(prefix, name), do: quote_name(prefix) <> "_" <> quote_name(name)
   defp quote_name(name) when is_atom(name), do: quote_name(Atom.to_string(name))
   defp quote_name(name), do: name
 end

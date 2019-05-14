@@ -1,4 +1,4 @@
-defmodule AlchemyTable.Decoding do
+defmodule Bigtable.Ecto.Decoding do
   @moduledoc """
   Provides the ability to decode the value of a cell chunk returned by a `Google.Bigtable.V2.ReadRowsResponse` 
   """
